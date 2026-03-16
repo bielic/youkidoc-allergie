@@ -1187,9 +1187,10 @@ function renderStats() {
           ticks: {
             stepSize: 1,
             font: { size: 11, weight: 'bold' },
+            color: tickColor,
             callback: v => THERAPY_LIST[v] ? THERAPY_LIST[v].short : ''
           },
-          grid: { color: 'rgba(0,0,0,0.04)' }
+          grid: { color: gridColorLight }
         },
         x: {
           min: -0.5,
@@ -1197,9 +1198,10 @@ function renderStats() {
           ticks: {
             font: { size: 10 }, maxRotation: 45, autoSkip: shouldSkip,
             stepSize: 1,
+            color: tickColor,
             callback: v => labels[v] || ''
           },
-          grid: { color: 'rgba(0,0,0,0.06)' }
+          grid: { color: gridColor }
         }
       }
     }
