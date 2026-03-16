@@ -1,0 +1,1424 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Youkidoc Allergie">
+<meta name="theme-color" content="#1D9E75">
+<meta name="description" content="Youkidoc Allergie Beschwerdetagebuch - Track your allergy symptoms">
+<meta name="color-scheme" content="light dark">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192x192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192x192.png">
+<title>Youkidoc Allergie Beschwerdetagebuch</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8f8f8; display: flex; justify-content: center; }
+  #app { max-width: 480px; width: 100%; min-height: 100dvh; display: flex; flex-direction: column; background: #fff; position: relative; }
+  .screen { display: none; flex-direction: column; flex: 1; overflow-y: auto; padding-bottom: 80px; animation: fadeIn 0.3s ease-in-out; }
+  .screen.active { display: flex; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideUp { from { transform: translateY(12px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+  .app-header { padding: 16px 16px 10px; border-bottom: 1px solid #eee; background: #fff; position: sticky; top: 0; z-index: 10; }
+  .app-title { font-size: 12px; color: #888; font-weight: 400; }
+  .app-subtitle { font-size: 18px; font-weight: 600; color: #111; margin-top: 2px; }
+  .date-badge { font-size: 12px; color: #1D9E75; background: #E1F5EE; padding: 4px 12px; border-radius: 20px; margin-top: 6px; display: inline-block; }
+
+  .section-label { font-size: 11px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 0.07em; padding: 16px 16px 10px 16px; margin: 8px 0 0 0; border-left: 3px solid #1D9E75; padding-left: 13px; }
+
+  .organ-block {
+    margin: 12px 16px;
+    padding: 16px;
+    background: #fff;
+    border-radius: 16px;
+    border: 1px solid #f0f0f0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    animation: slideUp 0.4s ease-out;
+  }
+
+  .organ-title { font-size: 14px; font-weight: 600; color: #222; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; }
+  .organ-icon { width: 32px; height: 32px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+
+  .slider-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .slider-label { font-size: 12px; color: #666; width: 110px; flex-shrink: 0; font-weight: 500; }
+
+  .slider-row input[type=range] {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    border-radius: 3px;
+    background: linear-gradient(to right, #4CAF50 0%, #FFC107 50%, #F44336 100%);
+    outline: none;
+    cursor: pointer;
+  }
+
+  .slider-row input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #1D9E75;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(29, 158, 117, 0.3);
+    transition: all 0.2s ease;
+  }
+
+  .slider-row input[type=range]::-webkit-slider-thumb:active {
+    transform: scale(1.1);
+    box-shadow: 0 3px 12px rgba(29, 158, 117, 0.4);
+  }
+
+  .slider-row input[type=range]::-moz-range-thumb {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #1D9E75;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 6px rgba(29, 158, 117, 0.3);
+    transition: all 0.2s ease;
+  }
+
+  .slider-row input[type=range]::-moz-range-thumb:active {
+    transform: scale(1.1);
+    box-shadow: 0 3px 12px rgba(29, 158, 117, 0.4);
+  }
+
+  .slider-row input[type=range]::-moz-range-track { background: transparent; border: none; }
+  .slider-row input[type=range]::-moz-range-progress { background: linear-gradient(to right, #4CAF50 0%, #FFC107 50%, #F44336 100%); }
+
+  .slider-val { font-size: 13px; font-weight: 600; color: #1D9E75; width: 32px; text-align: right; }
+
+  .therapy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 12px 16px 16px; }
+  .therapy-btn {
+    padding: 12px 12px;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    background: #fff;
+    color: #333;
+    text-align: left;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+
+  .therapy-btn:active { transform: scale(0.96); }
+  .therapy-btn.active {
+    background: linear-gradient(135deg, #E1F5EE 0%, #C8E6C9 100%);
+    border-color: #1D9E75;
+    color: #085041;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(29, 158, 117, 0.2);
+  }
+
+  .therapy-dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; flex-shrink: 0; transition: background 0.2s ease; }
+  .therapy-btn.active .therapy-dot { background: #1D9E75; }
+
+  .save-area { padding: 16px 16px 10px; }
+  .save-btn {
+    width: 100%;
+    padding: 14px 16px;
+    background: linear-gradient(135deg, #1D9E75 0%, #15765f 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(29, 158, 117, 0.3);
+    transition: all 0.2s ease;
+  }
+
+  .save-btn:active {
+    transform: scale(0.98);
+    box-shadow: 0 2px 8px rgba(29, 158, 117, 0.2);
+  }
+
+  .saved-toast {
+    position: fixed;
+    bottom: 88px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    text-align: center;
+    font-size: 14px;
+    color: white;
+    padding: 12px 20px;
+    font-weight: 500;
+    background: #1D9E75;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s ease;
+    z-index: 30;
+  }
+
+  .saved-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  .confirm-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
+  }
+  .confirm-overlay.show { opacity: 1; pointer-events: auto; }
+
+  .confirm-dialog {
+    background: #fff; border-radius: 16px; padding: 24px 20px 18px;
+    width: calc(100% - 48px); max-width: 360px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+    transform: scale(0.92); transition: transform 0.25s ease;
+  }
+  .confirm-overlay.show .confirm-dialog { transform: scale(1); }
+
+  .confirm-title { font-size: 16px; font-weight: 600; color: #111; margin-bottom: 8px; }
+  .confirm-msg { font-size: 13px; color: #666; line-height: 1.5; margin-bottom: 20px; }
+
+  .confirm-actions { display: flex; gap: 10px; }
+  .confirm-actions button {
+    flex: 1; padding: 12px; border: none; border-radius: 10px;
+    font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit;
+    transition: all 0.15s ease;
+  }
+  .confirm-actions button:active { transform: scale(0.97); }
+  .confirm-cancel { background: #f0f0f0; color: #333; }
+  .confirm-ok {
+    background: linear-gradient(135deg, #1D9E75 0%, #15765f 100%);
+    color: white; box-shadow: 0 2px 8px rgba(29,158,117,0.3);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .confirm-overlay { background: rgba(0,0,0,0.6); }
+    .confirm-dialog { background: #2c2c2e; }
+    .confirm-title { color: #f0f0f0; }
+    .confirm-msg { color: #aaa; }
+    .confirm-cancel { background: #3a3a3c; color: #ddd; }
+  }
+
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 480px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid #eee;
+    display: flex;
+    z-index: 20;
+  }
+
+  .nav-btn {
+    flex: 1;
+    padding: 12px 0 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-size: 10px;
+    color: #aaa;
+    font-family: inherit;
+    transition: all 0.2s ease;
+  }
+
+  .nav-btn.active { color: #1D9E75; }
+  .nav-btn svg { width: 24px; height: 24px; transition: transform 0.2s ease; }
+  .nav-btn.active svg { transform: scale(1.1); }
+
+  .cal-month-nav { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid #f0f0f0; }
+  .cal-month-nav button { background: none; border: 1px solid #ddd; border-radius: 10px; padding: 6px 14px; cursor: pointer; font-size: 14px; color: #333; transition: all 0.2s ease; }
+  .cal-month-nav button:active { transform: scale(0.96); }
+  .cal-month-title { font-size: 16px; font-weight: 600; }
+
+  .cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 4px; padding: 12px 16px; }
+  .cal-day-header { text-align: center; font-size: 11px; color: #999; padding: 6px 0; font-weight: 600; }
+  .cal-day { text-align: center; font-size: 13px; padding: 10px 0; border-radius: 10px; cursor: pointer; position: relative; transition: all 0.2s ease; }
+  .cal-day:hover { background: #f5f5f5; }
+  .cal-day.today { font-weight: 700; color: #1D9E75; }
+  .cal-day.has-data::after { content: ''; display: block; width: 4px; height: 4px; border-radius: 50%; background: #1D9E75; margin: 3px auto 0; }
+  .cal-day.selected { background: #1D9E75; color: white; box-shadow: 0 2px 8px rgba(29, 158, 117, 0.3); }
+  .cal-day.selected::after { background: rgba(255,255,255,0.8); }
+  .cal-day.empty { cursor: default; }
+
+  .cal-edit-btn {
+    margin: 10px 16px 16px;
+    display: block;
+    padding: 13px;
+    background: linear-gradient(135deg, #1D9E75 0%, #15765f 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    width: calc(100% - 32px);
+    box-shadow: 0 4px 12px rgba(29, 158, 117, 0.3);
+    transition: all 0.2s ease;
+  }
+
+  .cal-edit-btn:active { transform: scale(0.98); }
+  .cal-edit-btn:disabled { background: #ccc; cursor: default; box-shadow: none; opacity: 0.6; }
+
+  .stats-range { display: flex; gap: 8px; padding: 14px 16px; flex-wrap: wrap; }
+  .range-btn {
+    padding: 7px 16px;
+    border: 1.5px solid #ddd;
+    border-radius: 20px;
+    font-size: 12px;
+    cursor: pointer;
+    background: #fff;
+    color: #333;
+    font-family: inherit;
+    transition: all 0.2s ease;
+    font-weight: 500;
+  }
+  .range-btn.active {
+    background: linear-gradient(135deg, #1D9E75 0%, #15765f 100%);
+    border-color: #1D9E75;
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(29, 158, 117, 0.2);
+  }
+
+  .date-range-row {
+    display: flex; gap: 8px; padding: 6px 16px 12px; align-items: center; flex-wrap: wrap;
+  }
+  .date-range-row label { font-size: 12px; color: #666; font-weight: 500; }
+  .date-range-row input[type=date] {
+    font-size: 12px; padding: 6px 10px; border: 1.5px solid #ddd; border-radius: 10px;
+    background: #fff; color: #333; font-family: inherit; outline: none; transition: border-color 0.2s;
+  }
+  .date-range-row input[type=date]:focus { border-color: #1D9E75; }
+
+  .zoom-bar {
+    display: flex; align-items: center; gap: 8px; padding: 4px 16px 10px;
+  }
+  .zoom-btn {
+    width: 36px; height: 36px; border: 1.5px solid #ddd; border-radius: 10px;
+    background: #fff; font-size: 16px; font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; color: #333;
+    font-family: inherit; transition: all 0.15s ease; flex-shrink: 0;
+  }
+  .zoom-btn:active { transform: scale(0.94); }
+  .zoom-label { font-size: 12px; color: #888; flex: 1; text-align: center; }
+  .zoom-reset { font-size: 14px; }
+  .pdf-btn {
+    width: auto; padding: 0 14px; font-size: 12px; font-weight: 600;
+    background: linear-gradient(135deg, #1D9E75 0%, #15765f 100%);
+    color: white; border-color: #1D9E75;
+  }
+
+  .chart-section { padding: 8px 16px 24px; }
+  .chart-title { font-size: 13px; font-weight: 600; color: #666; margin-bottom: 12px; }
+  .chart-wrap { position: relative; width: 100%; height: 240px; }
+  .chart-wrap2 { position: relative; width: 100%; height: 200px; }
+  .chart-wrap-therapy { position: relative; width: 100%; height: 180px; }
+
+  /* Info screen */
+  .info-card {
+    margin: 12px 16px; padding: 20px; background: #fff;
+    border-radius: 16px; border: 1px solid #f0f0f0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06); animation: slideUp 0.4s ease-out;
+  }
+  .info-role { font-size: 12px; color: #1D9E75; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+  .info-name { font-size: 17px; font-weight: 700; color: #111; margin-bottom: 2px; }
+  .info-specialty { font-size: 13px; color: #555; line-height: 1.5; margin-bottom: 16px; }
+  .info-contact { margin-bottom: 16px; }
+  .info-contact-title { font-size: 12px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .info-line { font-size: 13px; color: #333; line-height: 1.6; }
+  .info-line a { color: #1D9E75; text-decoration: none; }
+  .info-line a:hover { text-decoration: underline; }
+  .info-version { text-align: center; font-size: 11px; color: #bbb; padding: 16px; }
+  .legend-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #555; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+  /* Data management screen */
+  .data-card {
+    margin: 12px 16px; padding: 16px; background: #fff;
+    border-radius: 16px; border: 1px solid #f0f0f0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06); animation: slideUp 0.4s ease-out;
+  }
+  .data-card-title { font-size: 14px; font-weight: 600; color: #222; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+  .data-card-desc { font-size: 12px; color: #888; margin-bottom: 14px; line-height: 1.4; }
+  .data-card-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+  .data-card-row label { font-size: 12px; color: #666; font-weight: 500; }
+  .data-card-row input[type=date] {
+    font-size: 12px; padding: 6px 10px; border: 1.5px solid #ddd; border-radius: 10px;
+    background: #fff; color: #333; font-family: inherit; outline: none; transition: border-color 0.2s;
+  }
+  .data-card-row input[type=date]:focus { border-color: #1D9E75; }
+  .data-action-btn {
+    padding: 10px 18px; border: none; border-radius: 10px; font-size: 13px;
+    font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.15s ease;
+  }
+  .data-action-btn:active { transform: scale(0.97); }
+  .data-action-btn.primary {
+    background: linear-gradient(135deg, #1D9E75 0%, #15765f 100%);
+    color: white; box-shadow: 0 2px 8px rgba(29,158,117,0.3);
+  }
+  .data-action-btn.secondary { background: #f0f0f0; color: #333; }
+  .data-action-btn.danger { background: #D85A30; color: white; box-shadow: 0 2px 8px rgba(216,90,48,0.3); }
+  .data-action-btn.danger-outline {
+    background: transparent; color: #D85A30; border: 1.5px solid #D85A30;
+  }
+
+  .data-file-input { display: none; }
+  .data-file-label {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 10px 18px; border: 1.5px dashed #ccc; border-radius: 10px; font-size: 13px;
+    font-weight: 500; color: #666; cursor: pointer; transition: all 0.2s;
+  }
+  .data-file-label:hover { border-color: #1D9E75; color: #1D9E75; }
+
+  .data-delete-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .data-delete-select {
+    font-size: 12px; padding: 8px 12px; border: 1.5px solid #ddd; border-radius: 10px;
+    background: #fff; color: #333; font-family: inherit; outline: none; flex: 1; min-width: 140px;
+  }
+  .data-delete-select:focus { border-color: #1D9E75; }
+
+  @media (prefers-color-scheme: dark) {
+    .data-card { background: #2c2c2e; border-color: #3a3a3c; }
+    .data-card-title { color: #f0f0f0; }
+    .data-card-desc { color: #888; }
+    .data-card-row label { color: #aaa; }
+    .data-card-row input[type=date] { background: #3a3a3c; border-color: #4a4a4c; color: #ddd; }
+    .data-action-btn.secondary { background: #3a3a3c; color: #ddd; }
+    .data-file-label { border-color: #4a4a4c; color: #aaa; }
+    .data-delete-select { background: #3a3a3c; border-color: #4a4a4c; color: #ddd; }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body { background: #1a1a1a; }
+    #app { background: #1c1c1e; }
+    .app-header { background: #1c1c1e; border-color: #2c2c2e; }
+    .app-title { color: #888; }
+    .app-subtitle { color: #f0f0f0; }
+    .organ-block { background: #2c2c2e; border-color: #3a3a3c; }
+    .slider-label { color: #aaa; }
+    .slider-val { color: #85E6BB; }
+    .slider-row input[type=range] { background: linear-gradient(to right, #4CAF50 0%, #FFC107 50%, #F44336 100%); }
+    .therapy-btn { background: #2c2c2e; border-color: #3a3a3c; color: #f0f0f0; }
+    .therapy-btn.active {
+      background: linear-gradient(135deg, #0F6E56 0%, #085041 100%);
+      border-color: #1D9E75;
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(29, 158, 117, 0.3);
+    }
+    .therapy-dot { background: #555; }
+    .save-btn { background: linear-gradient(135deg, #1D9E75 0%, #15765f 100%); }
+    .saved-toast { background: #1D9E75; }
+    .bottom-nav { background: rgba(28, 28, 30, 0.95); border-color: #2c2c2e; }
+    .nav-btn { color: #666; }
+    .nav-btn.active { color: #1D9E75; }
+    .cal-month-nav { border-color: #2c2c2e; }
+    .cal-month-nav button { border-color: #3a3a3c; color: #f0f0f0; background: #2c2c2e; }
+    .cal-month-title { color: #f0f0f0; }
+    .cal-day { color: #ddd; }
+    .cal-day-header { color: #666; }
+    .cal-day:hover { background: #3a3a3c; }
+    .range-btn { background: #2c2c2e; border-color: #3a3a3c; color: #ddd; }
+    .range-btn.active {
+      background: linear-gradient(135deg, #1D9E75 0%, #15765f 100%);
+      border-color: #1D9E75;
+      box-shadow: 0 2px 8px rgba(29, 158, 117, 0.3);
+    }
+    .date-range-row label { color: #aaa; }
+    .date-range-row input[type=date] { background: #2c2c2e; border-color: #3a3a3c; color: #ddd; }
+    .chart-title { color: #aaa; }
+    .legend-item { color: #aaa; }
+    .section-label { color: #666; }
+    .zoom-btn { background: #2c2c2e; border-color: #3a3a3c; color: #ddd; }
+    .pdf-btn { background: linear-gradient(135deg, #1D9E75 0%, #15765f 100%); color: white; border-color: #1D9E75; }
+    .info-card { background: #2c2c2e; border-color: #3a3a3c; }
+    .info-name { color: #f0f0f0; }
+    .info-specialty { color: #aaa; }
+    .info-line { color: #ddd; }
+    .info-contact-title { color: #666; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- HOME SCREEN -->
+  <div id="screen-home" class="screen active">
+    <div class="app-header">
+      <div class="app-title">Youkidoc</div>
+      <div class="app-subtitle">Allergie Beschwerdetagebuch</div>
+      <div class="date-badge" id="home-date"></div>
+    </div>
+
+    <div class="section-label">Allergiebeschwerden</div>
+
+    <div class="organ-block">
+      <div class="organ-title"><div class="organ-icon" style="background:#E6F1FB;">👁</div>Augen (Juckreiz, Tränen, Schwellung)</div>
+      <div class="slider-row"><span class="slider-label">Beschwerden</span><input type="range" min="0" max="100" value="0" step="1" class="symptom-slider" data-organ="augen" data-sym="score"><span class="slider-val">0</span></div>
+    </div>
+
+    <div class="organ-block">
+      <div class="organ-title"><div class="organ-icon" style="background:#FAEEDA;">👃</div>Nase (Juckreiz, Ausfluss, Schwellung)</div>
+      <div class="slider-row"><span class="slider-label">Beschwerden</span><input type="range" min="0" max="100" value="0" step="1" class="symptom-slider" data-organ="nase" data-sym="score"><span class="slider-val">0</span></div>
+    </div>
+
+    <div class="organ-block">
+      <div class="organ-title"><div class="organ-icon" style="background:#E1F5EE;">🫁</div>Lunge</div>
+      <div class="slider-row"><span class="slider-label">Atemnot</span><input type="range" min="0" max="100" value="0" step="1" class="symptom-slider" data-organ="lunge" data-sym="atemnot"><span class="slider-val">0</span></div>
+      <div class="slider-row"><span class="slider-label">Pfeifende Atmung</span><input type="range" min="0" max="100" value="0" step="1" class="symptom-slider" data-organ="lunge" data-sym="pfeifend"><span class="slider-val">0</span></div>
+      <div class="slider-row"><span class="slider-label">Husten</span><input type="range" min="0" max="100" value="0" step="1" class="symptom-slider" data-organ="lunge" data-sym="husten"><span class="slider-val">0</span></div>
+    </div>
+
+    <div class="organ-block">
+      <div class="organ-title"><div class="organ-icon" style="background:#FAECE7;">🩹</div>Haut (Ausschlag, Juckreiz)</div>
+      <div class="slider-row"><span class="slider-label">Beschwerden</span><input type="range" min="0" max="100" value="0" step="1" class="symptom-slider" data-organ="haut" data-sym="score"><span class="slider-val">0</span></div>
+    </div>
+
+    <div class="section-label">Therapie</div>
+    <div class="therapy-grid">
+      <button class="therapy-btn" data-therapy="augentropfen"><span class="therapy-dot"></span>Augentropfen</button>
+      <button class="therapy-btn" data-therapy="nasenspray"><span class="therapy-dot"></span>Nasenspray</button>
+      <button class="therapy-btn" data-therapy="inhalation_notfall"><span class="therapy-dot"></span>Inhalation (Notfall)</button>
+      <button class="therapy-btn" data-therapy="inhalation_kortison"><span class="therapy-dot"></span>Inhalation (Kortison)</button>
+      <button class="therapy-btn" data-therapy="kortisonkreme"><span class="therapy-dot"></span>Kortisoncrème</button>
+    </div>
+
+    <div class="save-area">
+      <button class="save-btn" id="save-btn">Eintrag speichern</button>
+      <div class="saved-toast" id="saved-toast">✓ Gespeichert</div>
+    </div>
+  </div>
+
+  <!-- CALENDAR SCREEN -->
+  <div id="screen-cal" class="screen">
+    <div class="app-header">
+      <div class="app-subtitle">Kalender</div>
+      <div style="font-size:12px;color:#999;margin-top:4px;">Datum wählen zum Nachtragen</div>
+    </div>
+    <div id="cal-container"></div>
+  </div>
+
+  <!-- STATS SCREEN -->
+  <div id="screen-stats" class="screen">
+    <div class="app-header">
+      <div class="app-subtitle">Statistik</div>
+    </div>
+    <div class="stats-range">
+      <button class="range-btn active" data-days="7">7 Tage</button>
+      <button class="range-btn" data-days="14">14 Tage</button>
+      <button class="range-btn" data-days="30">30 Tage</button>
+      <button class="range-btn" data-days="90">90 Tage</button>
+      <button class="range-btn" data-days="custom">Eigener Bereich</button>
+    </div>
+    <div class="date-range-row" id="custom-range-row" style="display:none;">
+      <label>Von</label>
+      <input type="date" id="stats-date-from">
+      <label>Bis</label>
+      <input type="date" id="stats-date-to">
+    </div>
+    <div class="zoom-bar">
+      <button class="zoom-btn" onclick="zoomIn()" title="Zoom in">＋</button>
+      <span class="zoom-label" id="zoom-label">Alle Tage</span>
+      <button class="zoom-btn" onclick="zoomOut()" title="Zoom out">−</button>
+      <button class="zoom-btn zoom-reset" onclick="zoomReset()" title="Reset">↺</button>
+      <button class="zoom-btn pdf-btn" onclick="exportStatsPDF()" title="PDF Export">PDF</button>
+    </div>
+    <div class="chart-section">
+      <div class="chart-title">Beschwerden nach Organ</div>
+      <div class="legend-row" id="symptom-legend"></div>
+      <div class="chart-wrap"><canvas id="symptomChart"></canvas></div>
+    </div>
+    <div class="chart-section">
+      <div class="chart-title">Lunge (Einzelsymptome)</div>
+      <div class="legend-row" id="lung-legend"></div>
+      <div class="chart-wrap"><canvas id="lungChart"></canvas></div>
+    </div>
+    <div class="chart-section">
+      <div class="chart-title">Therapieanwendungen</div>
+      <div class="legend-row" id="therapy-legend"></div>
+      <div class="chart-wrap-therapy"><canvas id="therapyChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- INFO SCREEN -->
+  <div id="screen-info" class="screen">
+    <div class="app-header">
+      <div class="app-subtitle">Info</div>
+    </div>
+
+    <div class="info-card">
+      <div class="info-role">Entwickler</div>
+      <div class="info-name">Dr. med. Christian Bieli</div>
+      <div class="info-specialty">Facharzt Kinder- und Jugendmedizin<br>Schwerpunkt Pädiatrische Pneumologie</div>
+
+      <div class="info-contact">
+        <div class="info-contact-title">Sprechstunde Pneumologie</div>
+        <div class="info-line">
+          Youkidoc<br>
+          Güterstrasse 154<br>
+          4053 Basel<br>
+          <a href="mailto:christian.bieli@youkidoc.ch">christian.bieli@youkidoc.ch</a>
+        </div>
+      </div>
+
+      <div class="info-contact">
+        <div class="info-contact-title">Leitender Arzt</div>
+        <div class="info-line">
+          KSA Kinderspital Aarau<br>
+          Tellstrasse 25<br>
+          5001 Aarau<br>
+          <a href="mailto:christian.bieli@ksa.ch">christian.bieli@ksa.ch</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-version">Youkidoc Allergie Beschwerdetagebuch v1.0</div>
+  </div>
+
+  <!-- DATA SCREEN -->
+  <div id="screen-data" class="screen">
+    <div class="app-header">
+      <div class="app-subtitle">Daten verwalten</div>
+    </div>
+
+    <!-- CSV Export -->
+    <div class="data-card">
+      <div class="data-card-title">📊 CSV-Export</div>
+      <div class="data-card-desc">Exportiere deine Einträge als CSV-Datei für einen bestimmten Zeitraum.</div>
+      <div class="data-card-row">
+        <label>Von</label>
+        <input type="date" id="csv-from">
+        <label>Bis</label>
+        <input type="date" id="csv-to">
+      </div>
+      <button class="data-action-btn primary" onclick="exportCSV()">CSV herunterladen</button>
+    </div>
+
+    <!-- JSON Backup -->
+    <div class="data-card">
+      <div class="data-card-title">💾 Backup (JSON)</div>
+      <div class="data-card-desc">Lade alle gespeicherten Daten als JSON-Datei herunter.</div>
+      <button class="data-action-btn primary" onclick="exportJSON()">Backup herunterladen</button>
+    </div>
+
+    <!-- JSON Import -->
+    <div class="data-card">
+      <div class="data-card-title">📥 Daten importieren</div>
+      <div class="data-card-desc">Stelle Daten aus einem JSON-Backup wieder her. Bestehende Einträge für gleiche Tage werden überschrieben.</div>
+      <input type="file" accept=".json" id="import-file" class="data-file-input" onchange="importJSON(this)">
+      <label for="import-file" class="data-file-label">📂 JSON-Datei auswählen</label>
+    </div>
+
+    <!-- Delete Data -->
+    <div class="data-card">
+      <div class="data-card-title">🗑 Daten löschen</div>
+      <div class="data-card-desc">Lösche einen einzelnen Eintrag oder alle gespeicherten Daten.</div>
+      <div class="data-delete-row">
+        <select id="delete-select" class="data-delete-select">
+          <option value="">— Tag wählen —</option>
+        </select>
+        <button class="data-action-btn danger-outline" onclick="deleteSelected()">Löschen</button>
+      </div>
+      <div style="margin-top:12px;">
+        <button class="data-action-btn danger" onclick="deleteAll()">Alle Daten löschen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONFIRM DIALOG -->
+  <div class="confirm-overlay" id="confirm-overlay">
+    <div class="confirm-dialog">
+      <div class="confirm-title" id="confirm-title">Eintrag überschreiben?</div>
+      <div class="confirm-msg" id="confirm-msg"></div>
+      <div class="confirm-actions">
+        <button class="confirm-cancel" id="confirm-cancel">Abbrechen</button>
+        <button class="confirm-ok" id="confirm-ok">Überschreiben</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav">
+    <button class="nav-btn active" id="nav-home" onclick="showScreen('home')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Heute
+    </button>
+    <button class="nav-btn" id="nav-cal" onclick="showScreen('cal')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Kalender
+    </button>
+    <button class="nav-btn" id="nav-stats" onclick="showScreen('stats')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Statistik
+    </button>
+    <button class="nav-btn" id="nav-info" onclick="showScreen('info')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+      Info
+    </button>
+    <button class="nav-btn" id="nav-data" onclick="showScreen('data')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2v6m0 0l3-3m-3 3L9 5"/><path d="M4 14h16"/><rect x="4" y="10" width="16" height="10" rx="2"/></svg>
+      Daten
+    </button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+// PWA Service Worker Registration
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js')
+      .then(reg => console.log('SW registered, scope:', reg.scope))
+      .catch(err => console.log('SW registration failed:', err));
+  });
+}
+
+const DB_KEY = 'youkidoc_v1';
+let currentEditDate = null;
+let statsRange = 7;
+let chartSymptom = null;
+let chartTherapy = null;
+let calSelected = null;
+let calDisplayYear = new Date().getFullYear();
+let calDisplayMonth = new Date().getMonth();
+
+function loadData() {
+  try { return JSON.parse(localStorage.getItem(DB_KEY) || '{}'); } catch(e) { return {}; }
+}
+function saveData(d) { localStorage.setItem(DB_KEY, JSON.stringify(d)); }
+
+function todayStr() { return new Date().toISOString().split('T')[0]; }
+function formatDateDE(str) { const [y,m,d] = str.split('-'); return `${d}.${m}.${y}`; }
+
+function getOrganScore(entry, organ) {
+  if (!entry || !entry.symptoms || !entry.symptoms[organ]) return 0;
+  const vals = Object.values(entry.symptoms[organ]);
+  if (!vals.length) return 0;
+  return Math.round(vals.reduce((a,b)=>a+b,0)/vals.length);
+}
+
+document.getElementById('home-date').textContent = formatDateDE(todayStr());
+
+document.querySelectorAll('.symptom-slider').forEach(sl => {
+  sl.addEventListener('input', function() {
+    const val = parseInt(this.value);
+    const valDisplay = this.parentNode.querySelector('.slider-val');
+    valDisplay.textContent = val;
+    valDisplay.style.color = val > 60 ? '#D85A30' : val > 30 ? '#FFC107' : '#1D9E75';
+  });
+});
+
+document.querySelectorAll('.therapy-btn').forEach(btn => {
+  btn.addEventListener('click', function() { this.classList.toggle('active'); });
+});
+
+function collectFormData() {
+  const symptoms = {};
+  document.querySelectorAll('.symptom-slider').forEach(sl => {
+    const organ = sl.dataset.organ; const sym = sl.dataset.sym;
+    if (!symptoms[organ]) symptoms[organ] = {};
+    symptoms[organ][sym] = parseInt(sl.value);
+  });
+  const therapies = {};
+  document.querySelectorAll('.therapy-btn.active').forEach(btn => { therapies[btn.dataset.therapy] = true; });
+  return { symptoms, therapies };
+}
+
+function loadFormData(entry) {
+  document.querySelectorAll('.symptom-slider').forEach(sl => {
+    const organ = sl.dataset.organ; const sym = sl.dataset.sym;
+    const val = entry && entry.symptoms && entry.symptoms[organ] ? (entry.symptoms[organ][sym] || 0) : 0;
+    sl.value = val;
+    const valDisplay = sl.parentNode.querySelector('.slider-val');
+    valDisplay.textContent = val;
+    valDisplay.style.color = val > 60 ? '#D85A30' : val > 30 ? '#FFC107' : '#1D9E75';
+  });
+  document.querySelectorAll('.therapy-btn').forEach(btn => {
+    btn.classList.toggle('active', !!(entry && entry.therapies && entry.therapies[btn.dataset.therapy]));
+  });
+}
+
+// Confirm dialog helpers
+function showConfirm(title, msg) {
+  return new Promise(resolve => {
+    document.getElementById('confirm-title').textContent = title;
+    document.getElementById('confirm-msg').textContent = msg;
+    const overlay = document.getElementById('confirm-overlay');
+    overlay.classList.add('show');
+    function cleanup(result) {
+      overlay.classList.remove('show');
+      document.getElementById('confirm-ok').removeEventListener('click', onOk);
+      document.getElementById('confirm-cancel').removeEventListener('click', onCancel);
+      resolve(result);
+    }
+    function onOk() { cleanup(true); }
+    function onCancel() { cleanup(false); }
+    document.getElementById('confirm-ok').addEventListener('click', onOk);
+    document.getElementById('confirm-cancel').addEventListener('click', onCancel);
+  });
+}
+
+function doSave(date) {
+  const db = loadData();
+  db[date] = collectFormData();
+  saveData(db);
+  const toast = document.getElementById('saved-toast');
+  toast.classList.add('show');
+  setTimeout(() => { toast.classList.remove('show'); }, 1800);
+  if (currentEditDate) {
+    currentEditDate = null;
+    document.getElementById('home-date').textContent = formatDateDE(todayStr());
+    loadFormData(loadData()[todayStr()] || null);
+  }
+}
+
+document.getElementById('save-btn').addEventListener('click', async function() {
+  const date = currentEditDate || todayStr();
+  const db = loadData();
+  if (db[date]) {
+    const ok = await showConfirm(
+      'Eintrag überschreiben?',
+      `Für den ${formatDateDE(date)} existiert bereits ein Eintrag. Möchtest du ihn überschreiben?`
+    );
+    if (!ok) return;
+  }
+  doSave(date);
+});
+
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+  if (name === 'stats') renderStats();
+  if (name === 'cal') { calSelected = null; renderCalendar(); }
+  if (name === 'home' && !currentEditDate) loadFormData(loadData()[todayStr()] || null);
+  if (name === 'data') {
+    if (typeof populateDeleteSelect === 'function') populateDeleteSelect();
+    const csvFrom = document.getElementById('csv-from');
+    const csvTo = document.getElementById('csv-to');
+    if (csvFrom && !csvFrom.value) {
+      const d = new Date(); d.setDate(d.getDate() - 30);
+      csvFrom.value = d.toISOString().split('T')[0];
+    }
+    if (csvTo && !csvTo.value) csvTo.value = todayStr();
+    if (csvTo) csvTo.max = todayStr();
+  }
+}
+
+function renderCalendar() {
+  const db = loadData();
+  const today = todayStr();
+  const months = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+  const days = ['Mo','Di','Mi','Do','Fr','Sa','So'];
+  const year = calDisplayYear; const month = calDisplayMonth;
+  const firstDay = new Date(year, month, 1).getDay();
+  const offset = (firstDay === 0) ? 6 : firstDay - 1;
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+
+  let html = `<div class="cal-month-nav">
+    <button onclick="calPrev()">&#8249;</button>
+    <span class="cal-month-title">${months[month]} ${year}</span>
+    <button onclick="calNext()">&#8250;</button>
+  </div><div class="cal-grid">`;
+  days.forEach(d => { html += `<div class="cal-day-header">${d}</div>`; });
+  for (let i=0; i<offset; i++) html += `<div class="cal-day empty"></div>`;
+  for (let i=1; i<=daysInMonth; i++) {
+    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
+    if (dateStr > today) { html += `<div class="cal-day empty" style="opacity:0.3">${i}</div>`; continue; }
+    let cls = 'cal-day';
+    if (dateStr === today) cls += ' today';
+    if (db[dateStr]) cls += ' has-data';
+    if (dateStr === calSelected) cls += ' selected';
+    html += `<div class="${cls}" onclick="selectCalDay('${dateStr}')">${i}</div>`;
+  }
+  html += `</div>`;
+  html += `<button class="cal-edit-btn" id="cal-edit-btn" ${calSelected ? '' : 'disabled'} onclick="goEditDate()">
+    ${calSelected ? 'Eintrag für ' + formatDateDE(calSelected) + ' bearbeiten' : 'Datum wählen...'}
+  </button>`;
+  document.getElementById('cal-container').innerHTML = html;
+}
+
+function calPrev() {
+  calDisplayMonth--;
+  if (calDisplayMonth < 0) { calDisplayMonth = 11; calDisplayYear--; }
+  renderCalendar();
+}
+
+function calNext() {
+  const now = new Date();
+  if (calDisplayYear < now.getFullYear() || (calDisplayYear === now.getFullYear() && calDisplayMonth < now.getMonth())) {
+    calDisplayMonth++;
+    if (calDisplayMonth > 11) { calDisplayMonth = 0; calDisplayYear++; }
+    renderCalendar();
+  }
+}
+
+function selectCalDay(dateStr) { calSelected = dateStr; renderCalendar(); }
+
+function goEditDate() {
+  if (!calSelected) return;
+  currentEditDate = calSelected;
+  document.getElementById('home-date').textContent = formatDateDE(calSelected);
+  loadFormData(loadData()[calSelected] || null);
+  showScreen('home');
+}
+
+let statsMode = 'preset'; // 'preset' or 'custom'
+let customFrom = null;
+let customTo = null;
+
+document.querySelectorAll('.range-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    const val = this.dataset.days;
+    if (val === 'custom') {
+      statsMode = 'custom';
+      document.getElementById('custom-range-row').style.display = 'flex';
+      // Set defaults if empty
+      const fromEl = document.getElementById('stats-date-from');
+      const toEl = document.getElementById('stats-date-to');
+      if (!fromEl.value) {
+        const d = new Date(); d.setDate(d.getDate() - 13);
+        fromEl.value = d.toISOString().split('T')[0];
+      }
+      if (!toEl.value) toEl.value = todayStr();
+      toEl.max = todayStr();
+      customFrom = fromEl.value;
+      customTo = toEl.value;
+      zoomStart = 0; zoomEnd = null;
+      renderStats();
+    } else {
+      statsMode = 'preset';
+      statsRange = parseInt(val);
+      document.getElementById('custom-range-row').style.display = 'none';
+      zoomStart = 0; zoomEnd = null;
+      renderStats();
+    }
+  });
+});
+
+document.getElementById('stats-date-from').addEventListener('change', function() {
+  customFrom = this.value;
+  zoomStart = 0; zoomEnd = null;
+  if (customTo && customFrom) renderStats();
+});
+document.getElementById('stats-date-to').addEventListener('change', function() {
+  customTo = this.value;
+  zoomStart = 0; zoomEnd = null;
+  if (customFrom && customTo) renderStats();
+});
+
+const ORGAN_COLORS = { augen:'#378ADD', nase:'#1D9E75', haut:'#D85A30' };
+const ORGAN_LABELS = { augen:'Augen', nase:'Nase', haut:'Haut' };
+const LUNG_SYMPTOMS = [
+  { key:'atemnot', label:'Atemnot', color:'#7F77DD' },
+  { key:'pfeifend', label:'Pfeifende Atmung', color:'#378ADD' },
+  { key:'husten', label:'Husten', color:'#D85A30' }
+];
+const THERAPY_LIST = [
+  { key:'augentropfen', label:'Augentropfen', short:'A', color:'#378ADD' },
+  { key:'nasenspray', label:'Nasenspray', short:'N', color:'#1D9E75' },
+  { key:'inhalation_notfall', label:'Inh. Notfall', short:'IN', color:'#D85A30' },
+  { key:'inhalation_kortison', label:'Inh. Kortison', short:'IK', color:'#7F77DD' },
+  { key:'kortisonkreme', label:'Kortisoncrème', short:'K', color:'#BA7517' }
+];
+let chartLung = null;
+
+// Zoom state
+let zoomStart = 0;
+let zoomEnd = null; // null = show all
+
+function getDateRange(days) {
+  const result = [];
+  const today = new Date();
+  for (let i=days-1; i>=0; i--) {
+    const d = new Date(today); d.setDate(today.getDate()-i);
+    result.push(d.toISOString().split('T')[0]);
+  }
+  return result;
+}
+
+function getCustomDateRange(from, to) {
+  const result = [];
+  const start = new Date(from + 'T00:00:00');
+  const end = new Date(to + 'T00:00:00');
+  if (start > end) return result;
+  const d = new Date(start);
+  while (d <= end) {
+    result.push(d.toISOString().split('T')[0]);
+    d.setDate(d.getDate() + 1);
+  }
+  return result;
+}
+
+function getActiveDates() {
+  if (statsMode === 'custom' && customFrom && customTo) {
+    return getCustomDateRange(customFrom, customTo);
+  }
+  return getDateRange(statsRange);
+}
+
+function zoomIn() {
+  const allDates = getActiveDates();
+  const total = allDates.length;
+  const currentWindow = (zoomEnd || total) - zoomStart;
+  const newWindow = Math.max(3, Math.floor(currentWindow * 0.6));
+  // Center the zoom
+  const center = zoomStart + Math.floor(currentWindow / 2);
+  zoomStart = Math.max(0, center - Math.floor(newWindow / 2));
+  zoomEnd = Math.min(total, zoomStart + newWindow);
+  renderStats();
+}
+function zoomOut() {
+  const allDates = getActiveDates();
+  const total = allDates.length;
+  const currentWindow = (zoomEnd || total) - zoomStart;
+  const newWindow = Math.min(total, Math.floor(currentWindow * 1.6));
+  const center = zoomStart + Math.floor(currentWindow / 2);
+  zoomStart = Math.max(0, center - Math.floor(newWindow / 2));
+  zoomEnd = Math.min(total, zoomStart + newWindow);
+  if (zoomEnd - zoomStart >= total) { zoomStart = 0; zoomEnd = null; }
+  renderStats();
+}
+function zoomReset() { zoomStart = 0; zoomEnd = null; renderStats(); }
+
+// Touch pinch-to-zoom on stats screen
+let pinchStartDist = 0;
+let pinchActive = false;
+document.getElementById('screen-stats').addEventListener('touchstart', function(e) {
+  if (e.touches.length === 2) {
+    pinchActive = true;
+    pinchStartDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+    e.preventDefault();
+  }
+}, { passive: false });
+document.getElementById('screen-stats').addEventListener('touchmove', function(e) {
+  if (pinchActive && e.touches.length === 2) { e.preventDefault(); }
+}, { passive: false });
+document.getElementById('screen-stats').addEventListener('touchend', function(e) {
+  if (pinchActive && e.changedTouches.length > 0) {
+    const remaining = e.touches;
+    if (remaining.length < 2) {
+      // Pinch ended – calculate by looking at the last changedTouches
+      const endDist = pinchStartDist; // fallback
+      // We use a simpler heuristic: check which direction
+      pinchActive = false;
+    }
+  }
+});
+// More robust: listen to touchend with gesturechange if available
+let lastPinchDist = 0;
+document.getElementById('screen-stats').addEventListener('touchmove', function(e) {
+  if (e.touches.length === 2) {
+    const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+    if (lastPinchDist > 0) {
+      const ratio = dist / lastPinchDist;
+      if (ratio > 1.3) { zoomIn(); lastPinchDist = dist; }
+      else if (ratio < 0.7) { zoomOut(); lastPinchDist = dist; }
+    } else {
+      lastPinchDist = dist;
+    }
+  } else {
+    lastPinchDist = 0;
+  }
+}, { passive: true });
+document.getElementById('screen-stats').addEventListener('touchend', function() { lastPinchDist = 0; });
+
+function renderStats() {
+  const db = loadData();
+  const allDates = getActiveDates();
+  if (!allDates.length) return;
+
+  // Apply zoom window
+  const end = zoomEnd || allDates.length;
+  const dates = allDates.slice(zoomStart, end);
+  const labels = dates.map(d => { const [y,m,day]=d.split('-'); return `${day}.${m}`; });
+  const numDates = dates.length;
+  const shouldSkip = numDates > 14;
+
+  // Update zoom label
+  const zl = document.getElementById('zoom-label');
+  if (zoomEnd && (zoomEnd - zoomStart < allDates.length)) {
+    zl.textContent = `${labels[0]} – ${labels[labels.length-1]} (${numDates} Tage)`;
+  } else {
+    zl.textContent = `Alle ${allDates.length} Tage`;
+  }
+
+  // Legend for main symptom chart (without Lunge)
+  document.getElementById('symptom-legend').innerHTML = Object.entries(ORGAN_LABELS).map(([k,v]) =>
+    `<div class="legend-item"><div class="legend-dot" style="background:${ORGAN_COLORS[k]}"></div>${v}</div>`
+  ).join('');
+
+  // Legend for lung chart
+  document.getElementById('lung-legend').innerHTML = LUNG_SYMPTOMS.map(s =>
+    `<div class="legend-item"><div class="legend-dot" style="background:${s.color}"></div>${s.label}</div>`
+  ).join('');
+
+  // Legend for therapy chart
+  document.getElementById('therapy-legend').innerHTML = THERAPY_LIST.map(t =>
+    `<div class="legend-item"><div class="legend-dot" style="background:${t.color}"></div><b>${t.short}</b> = ${t.label}</div>`
+  ).join('');
+
+  // Shared x-axis config for all charts
+  const sharedXConfig = {
+    ticks: { font:{size:10}, maxRotation:45, autoSkip: shouldSkip },
+    grid: { color:'rgba(0,0,0,0.06)' }
+  };
+
+  // 1) Main symptom chart (Augen, Nase, Haut – without Lunge)
+  if (chartSymptom) chartSymptom.destroy();
+  chartSymptom = new Chart(document.getElementById('symptomChart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: Object.keys(ORGAN_LABELS).map(organ => ({
+        label: ORGAN_LABELS[organ],
+        data: dates.map(d => getOrganScore(db[d], organ)),
+        borderColor: ORGAN_COLORS[organ],
+        backgroundColor: ORGAN_COLORS[organ] + '18',
+        tension: 0.35, fill: false, pointRadius: 4, borderWidth: 2
+      }))
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { min:0, max:100, ticks:{ font:{size:11} }, grid:{color:'rgba(0,0,0,0.06)'} },
+        x: sharedXConfig
+      }
+    }
+  });
+
+  // 2) Lung symptom chart (Atemnot, Pfeifend, Husten)
+  if (chartLung) chartLung.destroy();
+  chartLung = new Chart(document.getElementById('lungChart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: LUNG_SYMPTOMS.map(s => ({
+        label: s.label,
+        data: dates.map(d => {
+          if (!db[d] || !db[d].symptoms || !db[d].symptoms.lunge) return 0;
+          return db[d].symptoms.lunge[s.key] || 0;
+        }),
+        borderColor: s.color,
+        backgroundColor: s.color + '18',
+        tension: 0.35, fill: false, pointRadius: 4, borderWidth: 2
+      }))
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { min:0, max:100, ticks:{ font:{size:11} }, grid:{color:'rgba(0,0,0,0.06)'} },
+        x: sharedXConfig
+      }
+    }
+  });
+
+  // 3) Therapy chart: scatter with rect markers, y-axis = therapy abbreviations
+  if (chartTherapy) chartTherapy.destroy();
+  chartTherapy = new Chart(document.getElementById('therapyChart'), {
+    type: 'scatter',
+    data: {
+      datasets: THERAPY_LIST.map((t, ti) => ({
+        label: t.label,
+        data: dates.map((d, di) =>
+          db[d] && db[d].therapies && db[d].therapies[t.key] ? { x: di, y: ti } : null
+        ).filter(Boolean),
+        backgroundColor: t.color,
+        borderColor: t.color,
+        pointStyle: 'rectRounded',
+        pointRadius: 7,
+        pointHoverRadius: 9,
+        showLine: false
+      }))
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: ctx => labels[ctx[0].parsed.x] || '',
+            label: ctx => ctx.dataset.label
+          }
+        }
+      },
+      scales: {
+        y: {
+          min: -0.5,
+          max: THERAPY_LIST.length - 0.5,
+          reverse: false,
+          ticks: {
+            stepSize: 1,
+            font: { size: 11, weight: 'bold' },
+            callback: v => THERAPY_LIST[v] ? THERAPY_LIST[v].short : ''
+          },
+          grid: { color: 'rgba(0,0,0,0.04)' }
+        },
+        x: {
+          min: -0.5,
+          max: dates.length - 0.5,
+          ticks: {
+            font: { size: 10 }, maxRotation: 45, autoSkip: shouldSkip,
+            stepSize: 1,
+            callback: v => labels[v] || ''
+          },
+          grid: { color: 'rgba(0,0,0,0.06)' }
+        }
+      }
+    }
+  });
+}
+
+// PDF Export
+async function exportStatsPDF() {
+  const btn = document.querySelector('.pdf-btn');
+  btn.textContent = '...';
+  btn.style.pointerEvents = 'none';
+  try {
+    const statsEl = document.getElementById('screen-stats');
+    // Temporarily hide zoom bar for PDF
+    const zoomBar = document.querySelector('.zoom-bar');
+    const rangeBar = document.querySelector('.stats-range');
+    const customRow = document.getElementById('custom-range-row');
+    zoomBar.style.display = 'none';
+    rangeBar.style.display = 'none';
+    const customDisplay = customRow.style.display;
+    customRow.style.display = 'none';
+
+    const canvas = await html2canvas(statsEl, {
+      scale: 2, useCORS: true, backgroundColor: '#ffffff',
+      width: statsEl.scrollWidth, height: statsEl.scrollHeight,
+      windowWidth: statsEl.scrollWidth
+    });
+
+    zoomBar.style.display = '';
+    rangeBar.style.display = '';
+    customRow.style.display = customDisplay;
+
+    const imgData = canvas.toDataURL('image/png');
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const margin = 10;
+    const imgW = pageW - margin * 2;
+    const imgH = (canvas.height / canvas.width) * imgW;
+
+    // Title
+    pdf.setFontSize(14);
+    pdf.setTextColor(29, 158, 117);
+    pdf.text('Youkidoc Allergie Beschwerdetagebuch', margin, margin + 6);
+    pdf.setFontSize(10);
+    pdf.setTextColor(100);
+    const dates = getActiveDates();
+    const end = zoomEnd || dates.length;
+    const visibleDates = dates.slice(zoomStart, end);
+    if (visibleDates.length) {
+      pdf.text(`Zeitraum: ${formatDateDE(visibleDates[0])} – ${formatDateDE(visibleDates[visibleDates.length-1])}`, margin, margin + 12);
+    }
+    pdf.text(`Erstellt: ${formatDateDE(todayStr())}`, margin, margin + 17);
+
+    let yOffset = margin + 22;
+    // If image is too tall for one page, scale it
+    if (imgH > pageH - yOffset - margin) {
+      const scaledH = pageH - yOffset - margin;
+      const scaledW = (canvas.width / canvas.height) * scaledH;
+      pdf.addImage(imgData, 'PNG', margin, yOffset, scaledW, scaledH);
+    } else {
+      pdf.addImage(imgData, 'PNG', margin, yOffset, imgW, imgH);
+    }
+
+    pdf.save(`youkidoc_statistik_${todayStr()}.pdf`);
+    showToast('PDF exportiert');
+  } catch (err) {
+    console.error(err);
+    showToast('PDF-Export fehlgeschlagen');
+  }
+  btn.textContent = 'PDF';
+  btn.style.pointerEvents = '';
+}
+
+// ---- Data Management Functions ----
+
+function downloadFile(content, filename, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function showToast(msg) {
+  const toast = document.getElementById('saved-toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => { toast.classList.remove('show'); toast.textContent = '✓ Gespeichert'; }, 2200);
+}
+
+// CSV Export
+function exportCSV() {
+  const from = document.getElementById('csv-from').value;
+  const to = document.getElementById('csv-to').value;
+  if (!from || !to) { showToast('Bitte Von/Bis wählen'); return; }
+  if (from > to) { showToast('Von muss vor Bis liegen'); return; }
+
+  const db = loadData();
+  const dates = getCustomDateRange(from, to);
+  const therapyKeys = THERAPY_LIST.map(t => t.key);
+
+  // Header
+  const headers = ['Datum', 'Augen', 'Nase', 'Lunge_Atemnot', 'Lunge_Pfeifend', 'Lunge_Husten', 'Haut',
+    ...THERAPY_LIST.map(t => t.label)];
+  const rows = [headers.join(';')];
+
+  dates.forEach(d => {
+    const entry = db[d];
+    if (!entry) return;
+    const s = entry.symptoms || {};
+    const t = entry.therapies || {};
+    const row = [
+      formatDateDE(d),
+      getOrganScore(entry, 'augen'),
+      getOrganScore(entry, 'nase'),
+      s.lunge ? (s.lunge.atemnot || 0) : 0,
+      s.lunge ? (s.lunge.pfeifend || 0) : 0,
+      s.lunge ? (s.lunge.husten || 0) : 0,
+      getOrganScore(entry, 'haut'),
+      ...therapyKeys.map(k => t[k] ? 'Ja' : 'Nein')
+    ];
+    rows.push(row.join(';'));
+  });
+
+  if (rows.length === 1) { showToast('Keine Einträge im Zeitraum'); return; }
+  downloadFile(rows.join('\n'), `youkidoc_export_${from}_${to}.csv`, 'text/csv;charset=utf-8');
+  showToast('CSV exportiert');
+}
+
+// JSON Backup
+function exportJSON() {
+  const db = loadData();
+  const keys = Object.keys(db);
+  if (!keys.length) { showToast('Keine Daten vorhanden'); return; }
+  const backup = { app: 'youkidoc_allergie', version: 1, exported: new Date().toISOString(), data: db };
+  downloadFile(JSON.stringify(backup, null, 2), `youkidoc_backup_${todayStr()}.json`, 'application/json');
+  showToast('Backup heruntergeladen');
+}
+
+// JSON Import
+function importJSON(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    try {
+      const parsed = JSON.parse(e.target.result);
+      let importData = null;
+
+      // Support both raw format { "2024-01-01": {...} } and wrapped { data: {...} }
+      if (parsed.data && typeof parsed.data === 'object') {
+        importData = parsed.data;
+      } else if (typeof parsed === 'object' && !Array.isArray(parsed)) {
+        importData = parsed;
+      }
+
+      if (!importData) { showToast('Ungültiges Dateiformat'); return; }
+
+      const entries = Object.keys(importData).filter(k => /^\d{4}-\d{2}-\d{2}$/.test(k));
+      if (!entries.length) { showToast('Keine gültigen Einträge'); return; }
+
+      const ok = await showConfirm(
+        'Daten importieren?',
+        `${entries.length} Einträge gefunden (${formatDateDE(entries.sort()[0])} – ${formatDateDE(entries.sort()[entries.length-1])}). Bestehende Einträge für gleiche Tage werden überschrieben.`
+      );
+      if (!ok) { input.value = ''; return; }
+
+      const db = loadData();
+      entries.forEach(k => { db[k] = importData[k]; });
+      saveData(db);
+      showToast(`${entries.length} Einträge importiert`);
+      populateDeleteSelect();
+    } catch (err) {
+      showToast('Fehler: Datei nicht lesbar');
+    }
+    input.value = '';
+  };
+  reader.readAsText(file);
+}
+
+// Delete single day
+async function deleteSelected() {
+  const sel = document.getElementById('delete-select');
+  const dateStr = sel.value;
+  if (!dateStr) { showToast('Bitte Tag wählen'); return; }
+
+  const ok = await showConfirm(
+    'Eintrag löschen?',
+    `Möchtest du den Eintrag vom ${formatDateDE(dateStr)} unwiderruflich löschen?`
+  );
+  if (!ok) return;
+
+  const db = loadData();
+  delete db[dateStr];
+  saveData(db);
+  showToast('Eintrag gelöscht');
+  populateDeleteSelect();
+}
+
+// Delete all data
+async function deleteAll() {
+  const db = loadData();
+  const count = Object.keys(db).length;
+  if (!count) { showToast('Keine Daten vorhanden'); return; }
+
+  const ok = await showConfirm(
+    'Alle Daten löschen?',
+    `Möchtest du wirklich alle ${count} Einträge unwiderruflich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`
+  );
+  if (!ok) return;
+
+  saveData({});
+  showToast('Alle Daten gelöscht');
+  populateDeleteSelect();
+  loadFormData(null);
+}
+
+// Populate the delete dropdown with existing dates
+function populateDeleteSelect() {
+  const db = loadData();
+  const sel = document.getElementById('delete-select');
+  const dates = Object.keys(db).sort().reverse();
+  sel.innerHTML = '<option value="">— Tag wählen —</option>';
+  dates.forEach(d => {
+    const opt = document.createElement('option');
+    opt.value = d;
+    opt.textContent = formatDateDE(d);
+    sel.appendChild(opt);
+  });
+}
+
+const db = loadData();
+loadFormData(db[todayStr()] || null);
+</script>
+</body>
+</html>

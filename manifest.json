@@ -1,0 +1,26 @@
+{
+  "name": "Youkidoc Allergie Beschwerdetagebuch",
+  "short_name": "Youkidoc Allergie",
+  "description": "Erfasse und verfolge deine Allergie-Beschwerden täglich",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "scope": ".",
+  "theme_color": "#1D9E75",
+  "background_color": "#ffffff",
+  "orientation": "portrait-primary",
+  "lang": "de",
+  "icons": [
+    {
+      "src": "icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
