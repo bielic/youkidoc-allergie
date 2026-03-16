@@ -1087,10 +1087,16 @@ function renderStats() {
     `<div class="legend-item"><div class="legend-dot" style="background:${t.color}"></div><b>${t.short}</b> = ${t.label}</div>`
   ).join('');
 
+  // Detect dark mode for chart colors
+  const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)';
+  const gridColorLight = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
+  const tickColor = isDark ? '#ccc' : undefined;
+
   // Shared x-axis config for all charts
   const sharedXConfig = {
-    ticks: { font:{size:10}, maxRotation:45, autoSkip: shouldSkip },
-    grid: { color:'rgba(0,0,0,0.06)' }
+    ticks: { font:{size:10}, maxRotation:45, autoSkip: shouldSkip, color: tickColor },
+    grid: { color: gridColor }
   };
 
   // 1) Main symptom chart (Augen, Nase, Haut – without Lunge)
