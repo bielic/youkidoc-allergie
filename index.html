@@ -902,7 +902,16 @@ document.querySelectorAll('.range-btn').forEach(btn => {
     document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
     this.classList.add('active');
     const val = this.dataset.days;
-    if (val === 'custom') {
+    if (val === 'year') {
+      const year = this.dataset.year;
+      statsMode = 'custom';
+      const today = todayStr();
+      customFrom = `${year}-01-01`;
+      customTo = `${year}-12-31` > today ? today : `${year}-12-31`;
+      document.getElementById('custom-range-row').style.display = 'none';
+      zoomStart = 0; zoomEnd = null;
+      renderStats();
+    } else if (val === 'custom') {
       statsMode = 'custom';
       document.getElementById('custom-range-row').style.display = 'flex';
       // Set defaults if empty
