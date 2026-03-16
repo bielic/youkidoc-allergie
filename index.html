@@ -94,11 +94,11 @@
 
   .slider-val { font-size: 12px; font-weight: 600; color: #1D9E75; width: 28px; text-align: right; }
 
-  .therapy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 8px 12px 10px; }
+  .therapy-grid { display: flex; flex-wrap: wrap; gap: 5px; padding: 6px 12px 8px; }
   .therapy-btn {
-    padding: 9px 10px;
+    padding: 6px 10px;
     border: 1.5px solid #e0e0e0;
-    border-radius: 10px;
+    border-radius: 8px;
     font-size: 11px;
     font-weight: 500;
     cursor: pointer;
@@ -108,8 +108,8 @@
     transition: all 0.2s ease;
     display: flex;
     align-items: center;
-    gap: 6px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    gap: 5px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
   }
 
   .therapy-btn:active { transform: scale(0.96); }
