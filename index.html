@@ -909,7 +909,11 @@ function showScreen(name) {
   document.getElementById('nav-' + name).classList.add('active');
   if (name === 'stats') renderStats();
   if (name === 'cal') { calSelected = null; renderCalendar(); }
-  if (name === 'home' && !currentEditDate) loadFormData(loadData()[todayStr()] || null);
+  if (name === 'home' && !currentEditDate) {
+    const todayData = loadData()[todayStr()] || null;
+    if (todayData) { loadFormData(todayData); } else { applyAutoCopy(); }
+  }
+  if (name === 'reminder') updateReminderUI();
   if (name === 'data') {
     if (typeof populateDeleteSelect === 'function') populateDeleteSelect();
     const csvFrom = document.getElementById('csv-from');
