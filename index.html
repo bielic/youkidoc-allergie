@@ -1180,6 +1180,8 @@ const THERAPY_INFO = {
   biologikum: 'Omalizumab\u2122, Dupixent\u2122, Nucala\u2122'
 };
 let chartLung = null;
+const THERAPY_GROUP1 = THERAPY_LIST.filter(t => ['antihistaminikum','augentropfen','nasenspray'].includes(t.key));
+const THERAPY_GROUP2 = THERAPY_LIST.filter(t => ['inhalation_notfall','inhalation_kortison','biologikum'].includes(t.key));
 
 // Zoom state
 let zoomStart = 0;
