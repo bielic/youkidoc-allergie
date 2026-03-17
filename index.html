@@ -1048,12 +1048,22 @@ const LUNG_SYMPTOMS = [
   { key:'husten', label:'Husten', color:'#D85A30' }
 ];
 const THERAPY_LIST = [
+  { key:'antihistaminikum', label:'Antihistaminikum', short:'AH', color:'#E5556E' },
   { key:'augentropfen', label:'Augentropfen', short:'A', color:'#378ADD' },
   { key:'nasenspray', label:'Nasenspray', short:'N', color:'#1D9E75' },
-  { key:'inhalation_notfall', label:'Inh. Notfall', short:'IN', color:'#D85A30' },
-  { key:'inhalation_kortison', label:'Inh. Kortison', short:'IK', color:'#7F77DD' },
-  { key:'kortisonkreme', label:'Kortisoncrème', short:'K', color:'#BA7517' }
+  { key:'inhalation_notfall', label:'Inh. Bedarf/Notfall', short:'IN', color:'#D85A30' },
+  { key:'inhalation_kortison', label:'Inh. Dauertherapie', short:'ID', color:'#7F77DD' },
+  { key:'biologikum', label:'Biologikum', short:'B', color:'#BA7517' }
 ];
+
+const THERAPY_INFO = {
+  antihistaminikum: 'z.B. Xyzal\u2122, Cetallerg\u2122, Bilaxten\u2122, Feniallerg\u2122 etc., <a href="https://compendium.ch/register/atc/R06A" target="_blank" rel="noopener">komplette Liste</a>.',
+  augentropfen: '<a href="https://compendium.ch/register/atc/S01GX" target="_blank" rel="noopener">Komplette Liste</a>',
+  nasenspray: 'z.B. Avamys\u2122, Nasonex\u2122 etc., <a href="https://compendium.ch/register/atc/R01AD" target="_blank" rel="noopener">komplette Liste</a>.',
+  inhalation_notfall: 'Ventolin\u2122, Bricanyl\u2122, Salamol\u2122, Salbu Orion\u2122, Symbicort\u2122',
+  inhalation_kortison: 'Axotide\u2122, Seretide\u2122, Symbicort\u2122, Vannair\u2122, Relvar\u2122, Spiriva\u2122, Flutiform\u2122',
+  biologikum: 'Omalizumab\u2122, Dupixent\u2122, Nucala\u2122'
+};
 let chartLung = null;
 
 // Zoom state
