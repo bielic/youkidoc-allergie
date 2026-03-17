@@ -1288,14 +1288,12 @@ function renderStats() {
   const allDates = getActiveDates();
   if (!allDates.length) return;
 
-  // Apply zoom window
   const end = zoomEnd || allDates.length;
   const dates = allDates.slice(zoomStart, end);
   const labels = dates.map(d => { const [y,m,day]=d.split('-'); return `${day}.${m}`; });
   const numDates = dates.length;
   const shouldSkip = numDates > 14;
 
-  // Update zoom label
   const zl = document.getElementById('zoom-label');
   if (zoomEnd && (zoomEnd - zoomStart < allDates.length)) {
     zl.textContent = `${labels[0]} – ${labels[labels.length-1]} (${numDates} Tage)`;
@@ -1303,34 +1301,69 @@ function renderStats() {
     zl.textContent = `Alle ${allDates.length} Tage`;
   }
 
-  // Legend for main symptom chart (without Lunge)
-  document.getElementById('symptom-legend').innerHTML = Object.entries(ORGAN_LABELS).map(([k,v]) =>
-    `<div class="legend-item"><div class="legend-dot" style="background:${ORGAN_COLORS[k]}"></div>${v}</div>`
-  ).join('');
-
-  // Legend for lung chart
-  document.getElementById('lung-legend').innerHTML = LUNG_SYMPTOMS.map(s =>
-    `<div class="legend-item"><div class="legend-dot" style="background:${s.color}"></div>${s.label}</div>`
-  ).join('');
-
-  // Legend for therapy chart
-  document.getElementById('therapy-legend').innerHTML = THERAPY_LIST.map(t =>
-    `<div class="legend-item"><div class="legend-dot" style="background:${t.color}"></div><b>${t.short}</b> = ${t.label}</div>`
-  ).join('');
-
-  // Detect dark mode for chart colors
+  // Dark mode
   const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)';
   const gridColorLight = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
   const tickColor = isDark ? '#ccc' : undefined;
 
-  // Shared x-axis config for all charts
-  const sharedXConfig = {
-    ticks: { font:{size:10}, maxRotation:45, autoSkip: shouldSkip, color: tickColor },
+  // Shared x-axis (hidden on middle charts, shown on top/bottom)
+  const xHidden = { display: true, ticks: { display: false }, grid: { color: gridColor } };
+  const xTop = {
+    position: 'top',
+    ticks: { font:{size:8}, maxRotation:45, autoSkip: shouldSkip, color: tickColor },
+    grid: { color: gridColor }
+  };
+  const xBottom = {
+    ticks: { font:{size:8}, maxRotation:45, autoSkip: shouldSkip, color: tickColor },
     grid: { color: gridColor }
   };
 
-  // 1) Main symptom chart (Augen, Nase, Haut – without Lunge)
+  // Shared legend
+  const legendItems = [
+    ...Object.entries(ORGAN_LABELS).map(([k,v]) => `<div class="legend-item"><div class="legend-dot" style="background:${ORGAN_COLORS[k]}"></div>${v}</div>`),
+    ...LUNG_SYMPTOMS.map(s => `<div class="legend-item"><div class="legend-dot" style="background:${s.color}"></div>${s.label}</div>`),
+    ...THERAPY_LIST.map(t => `<div class="legend-item"><div class="legend-dot" style="background:${t.color}"></div><b>${t.short}</b> ${t.label}</div>`)
+  ];
+  document.getElementById('shared-legend').innerHTML = legendItems.join('');
+
+  // Helper: therapy scatter chart
+  function makeTherapyChart(canvasId, group, oldChart) {
+    if (oldChart) oldChart.destroy();
+    return new Chart(document.getElementById(canvasId), {
+      type: 'scatter',
+      data: {
+        datasets: group.map((t, ti) => ({
+          label: t.label,
+          data: dates.map((d, di) =>
+            db[d] && db[d].therapies && db[d].therapies[t.key] ? { x: di, y: ti } : null
+          ).filter(Boolean),
+          backgroundColor: t.color, borderColor: t.color,
+          pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8, showLine: false
+        }))
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false },
+          tooltip: { callbacks: { title: ctx => labels[ctx[0].parsed.x] || '', label: ctx => ctx.dataset.label } }
+        },
+        scales: {
+          y: {
+            min: -0.5, max: group.length - 0.5,
+            afterBuildTicks: axis => { axis.ticks = group.map((t, i) => ({ value: i })); },
+            ticks: { font: { size: 9, weight: 'bold' }, color: tickColor, callback: v => group[v] ? group[v].short : '' },
+            grid: { color: gridColorLight }
+          },
+          x: { min: -0.5, max: dates.length - 0.5,
+            ticks: { display: false, stepSize: 1 },
+            grid: { color: gridColor }
+          }
+        }
+      }
+    });
+  }
+
+  // 1) Organ symptom chart
   if (chartSymptom) chartSymptom.destroy();
   chartSymptom = new Chart(document.getElementById('symptomChart'), {
     type: 'line',
@@ -1339,22 +1372,24 @@ function renderStats() {
       datasets: Object.keys(ORGAN_LABELS).map(organ => ({
         label: ORGAN_LABELS[organ],
         data: dates.map(d => getOrganScore(db[d], organ)),
-        borderColor: ORGAN_COLORS[organ],
-        backgroundColor: ORGAN_COLORS[organ] + '18',
-        tension: 0.35, fill: false, pointRadius: 4, borderWidth: 2
+        borderColor: ORGAN_COLORS[organ], backgroundColor: ORGAN_COLORS[organ] + '18',
+        tension: 0.35, fill: false, pointRadius: 3, borderWidth: 1.5
       }))
     },
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false } },
       scales: {
-        y: { min:0, beginAtZero: true, ticks:{ font:{size:11}, color: tickColor }, grid:{color: gridColor} },
-        x: sharedXConfig
+        y: { min:0, beginAtZero:true, ticks:{ font:{size:9}, color: tickColor }, grid:{color: gridColor} },
+        x: xTop
       }
     }
   });
 
-  // 2) Lung symptom chart (Atemnot, Pfeifend, Husten)
+  // 2) Therapy group 1: AH, A, N
+  chartTherapy1 = makeTherapyChart('therapyChart1', THERAPY_GROUP1, chartTherapy1);
+
+  // 3) Lung chart
   if (chartLung) chartLung.destroy();
   chartLung = new Chart(document.getElementById('lungChart'), {
     type: 'line',
@@ -1366,75 +1401,38 @@ function renderStats() {
           if (!db[d] || !db[d].symptoms || !db[d].symptoms.lunge) return 0;
           return db[d].symptoms.lunge[s.key] || 0;
         }),
-        borderColor: s.color,
-        backgroundColor: s.color + '18',
-        tension: 0.35, fill: false, pointRadius: 4, borderWidth: 2
+        borderColor: s.color, backgroundColor: s.color + '18',
+        tension: 0.35, fill: false, pointRadius: 3, borderWidth: 1.5
       }))
     },
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false } },
       scales: {
-        y: { min:0, beginAtZero: true, ticks:{ font:{size:11}, color: tickColor }, grid:{color: gridColor} },
-        x: sharedXConfig
+        y: { min:0, beginAtZero:true, ticks:{ font:{size:9}, color: tickColor }, grid:{color: gridColor} },
+        x: xHidden
       }
     }
   });
 
-  // 3) Therapy chart: scatter with rect markers, y-axis = therapy abbreviations
-  if (chartTherapy) chartTherapy.destroy();
-  chartTherapy = new Chart(document.getElementById('therapyChart'), {
+  // 4) Therapy group 2: IN, ID, B
+  chartTherapy2 = makeTherapyChart('therapyChart2', THERAPY_GROUP2, chartTherapy2);
+
+  // X-axis bottom (label-only chart)
+  if (chartXBottom) chartXBottom.destroy();
+  chartXBottom = new Chart(document.getElementById('xAxisBottomCanvas'), {
     type: 'scatter',
-    data: {
-      datasets: THERAPY_LIST.map((t, ti) => ({
-        label: t.label,
-        data: dates.map((d, di) =>
-          db[d] && db[d].therapies && db[d].therapies[t.key] ? { x: di, y: ti } : null
-        ).filter(Boolean),
-        backgroundColor: t.color,
-        borderColor: t.color,
-        pointStyle: 'rectRounded',
-        pointRadius: 7,
-        pointHoverRadius: 9,
-        showLine: false
-      }))
-    },
+    data: { datasets: [{ data: [] }] },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            title: ctx => labels[ctx[0].parsed.x] || '',
-            label: ctx => ctx.dataset.label
-          }
-        }
-      },
+      plugins: { legend: { display: false } },
       scales: {
-        y: {
-          min: -0.5,
-          max: THERAPY_LIST.length - 0.5,
-          reverse: false,
-          afterBuildTicks: axis => {
-            axis.ticks = THERAPY_LIST.map((t, i) => ({ value: i }));
-          },
-          ticks: {
-            font: { size: 11, weight: 'bold' },
-            color: tickColor,
-            callback: (v) => THERAPY_LIST[v] ? THERAPY_LIST[v].short : ''
-          },
-          grid: { color: gridColorLight }
-        },
+        y: { display: false },
         x: {
-          min: -0.5,
-          max: dates.length - 0.5,
-          ticks: {
-            font: { size: 10 }, maxRotation: 45, autoSkip: shouldSkip,
-            stepSize: 1,
-            color: tickColor,
-            callback: v => labels[v] || ''
-          },
-          grid: { color: gridColor }
+          min: -0.5, max: dates.length - 0.5,
+          ticks: { font:{size:8}, maxRotation:45, autoSkip: shouldSkip, stepSize:1, color: tickColor,
+            callback: v => labels[v] || '' },
+          grid: { display: false }
         }
       }
     }
