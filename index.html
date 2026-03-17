@@ -324,11 +324,35 @@
     color: white; border-color: #1D9E75;
   }
 
-  .chart-section { padding: 8px 16px 24px; }
+  .chart-section { padding: 0 8px 0 0; }
   .chart-title { font-size: 13px; font-weight: 600; color: #666; margin-bottom: 12px; }
   .chart-wrap { position: relative; width: 100%; height: 240px; }
   .chart-wrap2 { position: relative; width: 100%; height: 200px; }
   .chart-wrap-therapy { position: relative; width: 100%; height: 180px; }
+
+  /* Compact stacked chart layout */
+  .stats-charts { padding: 0 4px; }
+  .chart-row {
+    display: flex; align-items: stretch; margin-bottom: 2px;
+  }
+  .chart-vlabel {
+    writing-mode: vertical-rl; transform: rotate(180deg);
+    font-size: 10px; font-weight: 600; color: #888;
+    display: flex; align-items: center; justify-content: center;
+    width: 18px; flex-shrink: 0; padding: 2px 0;
+  }
+  .chart-canvas-wrap { flex: 1; position: relative; min-width: 0; }
+  .chart-canvas-wrap canvas { width: 100% !important; }
+  .chart-row-organ .chart-canvas-wrap { height: 140px; }
+  .chart-row-th1 .chart-canvas-wrap { height: 70px; }
+  .chart-row-lung .chart-canvas-wrap { height: 110px; }
+  .chart-row-th2 .chart-canvas-wrap { height: 70px; }
+  .stats-shared-legend {
+    display: flex; flex-wrap: wrap; gap: 6px 12px; padding: 8px 8px 4px;
+    justify-content: center;
+  }
+  .stats-shared-legend .legend-item { font-size: 9px; gap: 4px; }
+  .stats-shared-legend .legend-dot { width: 8px; height: 8px; }
 
   /* Info screen */
   .info-card {
