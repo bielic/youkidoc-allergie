@@ -1013,6 +1013,8 @@ document.querySelectorAll('.therapy-btn').forEach(btn => {
 function showTherapyInfo(key) {
   const therapy = THERAPY_LIST.find(t => t.key === key);
   if (!therapy || !THERAPY_INFO[key]) return;
+  // Clear any iOS text selection that may have been triggered by the long press
+  if (window.getSelection) window.getSelection().removeAllRanges();
   document.getElementById('therapy-info-title').textContent = therapy.label;
   document.getElementById('therapy-info-text').innerHTML = THERAPY_INFO[key];
   document.getElementById('therapy-info-overlay').classList.add('show');
