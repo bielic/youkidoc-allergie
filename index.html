@@ -1537,8 +1537,156 @@ function populateDeleteSelect() {
   });
 }
 
+// ---- Copy from yesterday ----
+
+function copyFromYesterday() {
+  const db = loadData();
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  const yesterdayStr = d.toISOString().split('T')[0];
+  const entry = db[yesterdayStr];
+  if (!entry) { showToast('Keine Daten vom Vortag'); return; }
+  loadFormData(entry);
+  showToast('Daten vom Vortag übernommen');
+}
+
+function saveAutoCopy() {
+  const checked = document.getElementById('auto-copy-check').checked;
+  localStorage.setItem('youkidoc_autocopy', checked ? '1' : '0');
+}
+
+function loadAutoCopy() {
+  const val = localStorage.getItem('youkidoc_autocopy');
+  document.getElementById('auto-copy-check').checked = val === '1';
+  return val === '1';
+}
+
+function applyAutoCopy() {
+  const db = loadData();
+  const today = todayStr();
+  // Only auto-copy if no entry exists for today
+  if (db[today]) return;
+  if (!loadAutoCopy()) return;
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  const yesterdayStr = d.toISOString().split('T')[0];
+  const entry = db[yesterdayStr];
+  if (entry) loadFormData(entry);
+}
+
+// ---- Reminder / Notification ----
+
+const REMINDER_KEY = 'youkidoc_reminder';
+let reminderInterval = null;
+
+function loadReminderSettings() {
+  try { return JSON.parse(localStorage.getItem(REMINDER_KEY) || '{}'); } catch(e) { return {}; }
+}
+
+function saveReminderSettings() {
+  const settings = loadReminderSettings();
+  settings.time = document.getElementById('reminder-time').value || '19:00';
+  localStorage.setItem(REMINDER_KEY, JSON.stringify(settings));
+  updateReminderStatus();
+  scheduleReminder();
+}
+
+function toggleReminder() {
+  const settings = loadReminderSettings();
+  settings.enabled = !settings.enabled;
+  if (!settings.time) settings.time = '19:00';
+  localStorage.setItem(REMINDER_KEY, JSON.stringify(settings));
+
+  if (settings.enabled) {
+    // Request notification permission
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().then(perm => {
+        if (perm !== 'granted') {
+          settings.enabled = false;
+          localStorage.setItem(REMINDER_KEY, JSON.stringify(settings));
+          showToast('Benachrichtigungen nicht erlaubt');
+        }
+        updateReminderUI();
+        scheduleReminder();
+      });
+      return;
+    } else if ('Notification' in window && Notification.permission === 'denied') {
+      settings.enabled = false;
+      localStorage.setItem(REMINDER_KEY, JSON.stringify(settings));
+      showToast('Benachrichtigungen blockiert');
+    }
+  }
+  updateReminderUI();
+  scheduleReminder();
+}
+
+function updateReminderUI() {
+  const settings = loadReminderSettings();
+  const toggle = document.getElementById('reminder-toggle');
+  const timeInput = document.getElementById('reminder-time');
+  const status = document.getElementById('reminder-status');
+
+  if (settings.enabled) {
+    toggle.classList.add('active');
+  } else {
+    toggle.classList.remove('active');
+  }
+  timeInput.value = settings.time || '19:00';
+  updateReminderStatus();
+}
+
+function updateReminderStatus() {
+  const settings = loadReminderSettings();
+  const status = document.getElementById('reminder-status');
+  if (settings.enabled) {
+    status.textContent = `Erinnerung aktiv: täglich um ${settings.time || '19:00'} Uhr`;
+  } else {
+    status.textContent = 'Erinnerung deaktiviert';
+    status.style.color = '#999';
+  }
+}
+
+function scheduleReminder() {
+  if (reminderInterval) { clearInterval(reminderInterval); reminderInterval = null; }
+  const settings = loadReminderSettings();
+  if (!settings.enabled || !settings.time) return;
+
+  // Check every 30 seconds if it's time
+  reminderInterval = setInterval(() => {
+    const now = new Date();
+    const [h, m] = settings.time.split(':').map(Number);
+    if (now.getHours() === h && now.getMinutes() === m && now.getSeconds() < 30) {
+      sendReminder();
+    }
+  }, 30000);
+}
+
+function sendReminder() {
+  const db = loadData();
+  const today = todayStr();
+  if (db[today]) return; // Already has entry for today
+
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification('Youkidoc Allergie', {
+      body: 'Vergiss nicht, deine heutigen Allergiebeschwerden einzutragen!',
+      icon: 'icon-192x192.png',
+      tag: 'youkidoc-reminder'
+    });
+  }
+}
+
+// ---- Init ----
+
 const db = loadData();
-loadFormData(db[todayStr()] || null);
+const todayEntry = db[todayStr()] || null;
+if (todayEntry) {
+  loadFormData(todayEntry);
+} else {
+  applyAutoCopy();
+}
+loadAutoCopy();
+updateReminderUI();
+scheduleReminder();
 </script>
 </body>
 </html>
