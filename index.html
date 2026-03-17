@@ -420,6 +420,59 @@
   .toggle-switch.active::after { transform: translateX(20px); }
 
   /* Therapy info popup */
+  /* PDF Export Modal */
+  .pdf-modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 60; opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
+  }
+  .pdf-modal-overlay.show { opacity: 1; pointer-events: auto; }
+  .pdf-modal {
+    background: #fff; border-radius: 18px; padding: 22px 20px 18px;
+    width: calc(100% - 48px); max-width: 360px;
+    box-shadow: 0 14px 48px rgba(0,0,0,0.22);
+    transform: scale(0.92); transition: transform 0.25s ease;
+  }
+  .pdf-modal-overlay.show .pdf-modal { transform: scale(1); }
+  .pdf-modal-title { font-size: 16px; font-weight: 700; color: #1D9E75; margin-bottom: 16px; }
+  .pdf-modal-label { font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px; }
+  .pdf-modal-input {
+    width: 100%; padding: 10px 12px; border: 1.5px solid #e0e0e0; border-radius: 10px;
+    font-size: 14px; color: #111; font-family: inherit; background: #fafafa;
+    outline: none; transition: border-color 0.15s;
+  }
+  .pdf-modal-input:focus { border-color: #1D9E75; background: #fff; }
+  .pdf-modal-input::placeholder { color: #bbb; }
+  .pdf-modal-sep { height: 1px; background: #f0f0f0; margin: 16px 0; }
+  .pdf-modal-hint { font-size: 11px; color: #aaa; margin-top: 6px; line-height: 1.4; }
+  .pdf-modal-actions { display: flex; gap: 10px; margin-top: 18px; }
+  .pdf-modal-actions button {
+    flex: 1; padding: 12px; border: none; border-radius: 10px;
+    font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit;
+    transition: all 0.15s ease;
+  }
+  .pdf-modal-actions button:active { transform: scale(0.97); }
+  .pdf-modal-cancel { background: #f0f0f0; color: #333; }
+  .pdf-modal-ok {
+    background: linear-gradient(135deg, #1D9E75 0%, #15765f 100%);
+    color: white; box-shadow: 0 2px 8px rgba(29,158,117,0.3);
+  }
+  /* PDF capture: force light mode on HTML elements */
+  .pdf-capture-mode .chart-vlabel { color: #444 !important; }
+  .pdf-capture-mode .shared-legend { background: #f7f7f7 !important; }
+  .pdf-capture-mode .legend-item { color: #222 !important; }
+  .pdf-capture-mode .zoom-label { color: #555 !important; }
+  @media (prefers-color-scheme: dark) {
+    .pdf-modal { background: #2c2c2e; }
+    .pdf-modal-title { color: #34d399; }
+    .pdf-modal-label { color: #888; }
+    .pdf-modal-input { background: #3a3a3c; border-color: #48484a; color: #f5f5f5; }
+    .pdf-modal-input:focus { border-color: #34d399; background: #3a3a3c; }
+    .pdf-modal-sep { background: #3a3a3c; }
+    .pdf-modal-hint { color: #777; }
+    .pdf-modal-cancel { background: #3a3a3c; color: #e8e8e8; }
+  }
+
   .therapy-info-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.4);
     display: flex; align-items: center; justify-content: center;
@@ -667,7 +720,7 @@
       <span class="zoom-label" id="zoom-label">Alle Tage</span>
       <button class="zoom-btn" onclick="zoomOut()" title="Zoom out">−</button>
       <button class="zoom-btn zoom-reset" onclick="zoomReset()" title="Reset">↺</button>
-      <button class="zoom-btn pdf-btn" onclick="exportStatsPDF()" title="PDF Export">PDF</button>
+      <button class="zoom-btn pdf-btn" onclick="showPdfModal()" title="PDF Export">PDF</button>
     </div>
     <div class="stats-charts" id="stats-charts">
       <!-- 1. Beschwerden: Augen, Nase, Haut (x-axis top: year + month) -->
@@ -718,7 +771,7 @@
       </div>
     </div>
 
-    <div class="info-version" id="app-version">Youkidoc Allergie Beschwerdetagebuch v1.1</div>
+    <div class="info-version" id="app-version">Youkidoc Allergie Beschwerdetagebuch v1.2</div>
   </div>
 
   <!-- DATA SCREEN -->
@@ -800,6 +853,23 @@
     </div>
   </div>
 
+  <!-- PDF EXPORT MODAL -->
+  <div class="pdf-modal-overlay" id="pdf-modal-overlay" onclick="closePdfModal(event)">
+    <div class="pdf-modal">
+      <div class="pdf-modal-title">📄 PDF Export</div>
+      <div class="pdf-modal-label">Patientenname</div>
+      <input type="text" class="pdf-modal-input" id="pdf-patient-name" placeholder="Optional – z.B. Max Mustermann" autocomplete="name">
+      <div class="pdf-modal-sep"></div>
+      <div class="pdf-modal-label">Email-Adresse</div>
+      <input type="email" class="pdf-modal-input" id="pdf-email" placeholder="Optional – z.B. arzt@klinik.ch" autocomplete="email">
+      <div class="pdf-modal-hint">Falls angegeben, wird eine Teilen-Option angeboten.</div>
+      <div class="pdf-modal-actions">
+        <button class="pdf-modal-cancel" onclick="closePdfModal()">Abbrechen</button>
+        <button class="pdf-modal-ok" onclick="doExportPDF()">Exportieren</button>
+      </div>
+    </div>
+  </div>
+
   <!-- THERAPY INFO POPUP -->
   <div class="therapy-info-overlay" id="therapy-info-overlay" onclick="closeTherapyInfo(event)">
     <div class="therapy-info-box">
@@ -869,6 +939,7 @@ let statsRange = 30;
 let chartSymptom = null;
 let chartTherapy1 = null;
 let chartTherapy2 = null;
+let pdfExportMode = false; // forces light colours when capturing for PDF
 let calSelected = null;
 let calDisplayYear = new Date().getFullYear();
 let calDisplayMonth = new Date().getMonth();
@@ -1314,10 +1385,10 @@ function renderStats() {
   }
 
   // Dark mode
-  const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const isDark = !pdfExportMode && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)';
   const gridColorLight = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
-  const tickColor = isDark ? '#ccc' : undefined;
+  const tickColor = isDark ? '#ccc' : '#555';
 
   // Shared x-axis (hidden on middle charts, shown on top/bottom)
   const xHidden = { display: true, ticks: { display: false }, grid: { color: gridColor } };
@@ -1502,69 +1573,142 @@ function renderStats() {
   });
 }
 
-// PDF Export
-async function exportStatsPDF() {
+// PDF Export Modal
+function showPdfModal() {
+  document.getElementById('pdf-modal-overlay').classList.add('show');
+  setTimeout(() => document.getElementById('pdf-patient-name').focus(), 300);
+}
+function closePdfModal(e) {
+  if (e && e.target !== document.getElementById('pdf-modal-overlay')) return;
+  document.getElementById('pdf-modal-overlay').classList.remove('show');
+}
+
+async function doExportPDF() {
+  const patientName = document.getElementById('pdf-patient-name').value.trim();
+  const emailAddr  = document.getElementById('pdf-email').value.trim();
+  document.getElementById('pdf-modal-overlay').classList.remove('show');
+
   const btn = document.querySelector('.pdf-btn');
   btn.textContent = '...';
   btn.style.pointerEvents = 'none';
+
+  const statsEl = document.getElementById('screen-stats');
+  const zoomBar   = document.querySelector('.zoom-bar');
+  const rangeBar  = document.querySelector('.stats-range');
+  const customRow = document.getElementById('custom-range-row');
+
   try {
-    const statsEl = document.getElementById('screen-stats');
-    // Temporarily hide zoom bar for PDF
-    const zoomBar = document.querySelector('.zoom-bar');
-    const rangeBar = document.querySelector('.stats-range');
-    const customRow = document.getElementById('custom-range-row');
+    // 1) Force light mode for charts and UI elements
+    pdfExportMode = true;
+    statsEl.classList.add('pdf-capture-mode');
+    renderStats();
+    await new Promise(r => setTimeout(r, 450)); // wait for Chart.js to finish drawing
+
+    // 2) Hide UI-only elements
     zoomBar.style.display = 'none';
     rangeBar.style.display = 'none';
     const customDisplay = customRow.style.display;
     customRow.style.display = 'none';
 
-    const canvas = await html2canvas(statsEl, {
-      scale: 2, useCORS: true, backgroundColor: '#ffffff',
+    // 3) Capture
+    const captureCanvas = await html2canvas(statsEl, {
+      scale: 2.5, useCORS: true, backgroundColor: '#ffffff',
       width: statsEl.scrollWidth, height: statsEl.scrollHeight,
-      windowWidth: statsEl.scrollWidth
+      windowWidth: statsEl.scrollWidth, logging: false
     });
 
+    // 4) Restore
     zoomBar.style.display = '';
     rangeBar.style.display = '';
     customRow.style.display = customDisplay;
+    pdfExportMode = false;
+    statsEl.classList.remove('pdf-capture-mode');
+    renderStats(); // re-render with original colours
 
-    const imgData = canvas.toDataURL('image/png');
+    // 5) Build PDF
+    const imgData = captureCanvas.toDataURL('image/jpeg', 0.92);
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF('p', 'mm', 'a4');
     const pageW = pdf.internal.pageSize.getWidth();
     const pageH = pdf.internal.pageSize.getHeight();
     const margin = 10;
     const imgW = pageW - margin * 2;
-    const imgH = (canvas.height / canvas.width) * imgW;
+    const imgH = (captureCanvas.height / captureCanvas.width) * imgW;
 
-    // Title
-    pdf.setFontSize(14);
+    // Header
+    pdf.setFontSize(13);
     pdf.setTextColor(29, 158, 117);
     pdf.text('Youkidoc Allergie Beschwerdetagebuch', margin, margin + 6);
+    let headerY = margin + 6;
     pdf.setFontSize(10);
-    pdf.setTextColor(100);
-    const dates = getActiveDates();
-    const end = zoomEnd || dates.length;
-    const visibleDates = dates.slice(zoomStart, end);
+    pdf.setTextColor(80);
+    if (patientName) {
+      headerY += 6;
+      pdf.setFontSize(11);
+      pdf.setFont(undefined, 'bold');
+      pdf.text(`Patient: ${patientName}`, margin, headerY);
+      pdf.setFont(undefined, 'normal');
+      pdf.setFontSize(10);
+    }
+    const allDates = getActiveDates();
+    const visibleDates = allDates.slice(zoomStart, zoomEnd || allDates.length);
     if (visibleDates.length) {
-      pdf.text(`Zeitraum: ${formatDateDE(visibleDates[0])} – ${formatDateDE(visibleDates[visibleDates.length-1])}`, margin, margin + 12);
+      headerY += 5.5;
+      pdf.text(`Zeitraum: ${formatDateDE(visibleDates[0])} – ${formatDateDE(visibleDates[visibleDates.length-1])}`, margin, headerY);
     }
-    pdf.text(`Erstellt: ${formatDateDE(todayStr())}`, margin, margin + 17);
+    headerY += 5;
+    pdf.text(`Erstellt: ${formatDateDE(todayStr())}`, margin, headerY);
 
-    let yOffset = margin + 22;
-    // If image is too tall for one page, scale it
-    if (imgH > pageH - yOffset - margin) {
-      const scaledH = pageH - yOffset - margin;
-      const scaledW = (canvas.width / canvas.height) * scaledH;
-      pdf.addImage(imgData, 'PNG', margin, yOffset, scaledW, scaledH);
+    // Divider line
+    headerY += 3;
+    pdf.setDrawColor(220, 220, 220);
+    pdf.line(margin, headerY, pageW - margin, headerY);
+    headerY += 4;
+
+    // Chart image — scale to fit remaining page
+    const available = pageH - headerY - margin;
+    const finalH = imgH > available ? available : imgH;
+    const finalW = imgH > available ? (captureCanvas.width / captureCanvas.height) * available : imgW;
+    pdf.addImage(imgData, 'JPEG', margin, headerY, finalW, finalH);
+
+    // Tiny footer
+    pdf.setFontSize(7);
+    pdf.setTextColor(180);
+    pdf.text('Youkidoc Allergie Beschwerdetagebuch – youkidoc.ch', margin, pageH - 5);
+
+    // 6) Save / Share
+    const filename = `youkidoc_${patientName ? patientName.replace(/\s+/g,'_') + '_' : ''}${todayStr()}.pdf`;
+
+    if (emailAddr) {
+      // Try Web Share API (works great on iOS/Android)
+      const pdfBlob = pdf.output('blob');
+      const pdfFile = new File([pdfBlob], filename, { type: 'application/pdf' });
+      if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+        await navigator.share({
+          files: [pdfFile],
+          title: 'Youkidoc Beschwerdetagebuch',
+          text: `Beschwerdetagebuch${patientName ? ' – ' + patientName : ''}`
+        });
+        showToast('PDF geteilt');
+      } else {
+        // Fallback: download + open mail client
+        pdf.save(filename);
+        const subject = encodeURIComponent(`Beschwerdetagebuch${patientName ? ' – ' + patientName : ''}`);
+        const body = encodeURIComponent(`Guten Tag,\n\nim Anhang finden Sie den Beschwerdetagebuch-Report${patientName ? ' von ' + patientName : ''}.\n\nMit freundlichen Grüssen`);
+        setTimeout(() => { window.location.href = `mailto:${emailAddr}?subject=${subject}&body=${body}`; }, 800);
+        showToast('PDF heruntergeladen – E-Mail wird geöffnet');
+      }
     } else {
-      pdf.addImage(imgData, 'PNG', margin, yOffset, imgW, imgH);
+      pdf.save(filename);
+      showToast('PDF exportiert');
     }
-
-    pdf.save(`youkidoc_statistik_${todayStr()}.pdf`);
-    showToast('PDF exportiert');
   } catch (err) {
     console.error(err);
+    pdfExportMode = false;
+    statsEl.classList.remove('pdf-capture-mode');
+    zoomBar.style.display = '';
+    rangeBar.style.display = '';
+    renderStats();
     showToast('PDF-Export fehlgeschlagen');
   }
   btn.textContent = 'PDF';
