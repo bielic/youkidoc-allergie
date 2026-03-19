@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="Youkidoc Allergie">
 <meta name="theme-color" content="#1D9E75">
 <meta name="description" content="Youkidoc Allergie Beschwerdetagebuch - Track your allergy symptoms">
-<meta name="color-scheme" content="light dark">
+<meta name="color-scheme" content="light">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192x192.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192x192.png">
@@ -202,14 +202,6 @@
   .confirm-ok {
     background: linear-gradient(135deg, #1D9E75 0%, #15765f 100%);
     color: white; box-shadow: 0 2px 8px rgba(29,158,117,0.3);
-  }
-
-  @media (prefers-color-scheme: dark) {
-    .confirm-overlay { background: rgba(0,0,0,0.6); }
-    .confirm-dialog { background: #2c2c2e; box-shadow: 0 12px 40px rgba(0,0,0,0.4); }
-    .confirm-title { color: #f5f5f5; }
-    .confirm-msg { color: #ccc; }
-    .confirm-cancel { background: #3a3a3c; color: #e8e8e8; }
   }
 
   .bottom-nav {
@@ -488,17 +480,6 @@
   .pdf-capture-mode .shared-legend { background: #f7f7f7 !important; }
   .pdf-capture-mode .legend-item { color: #222 !important; }
   .pdf-capture-mode .zoom-label { color: #555 !important; }
-  @media (prefers-color-scheme: dark) {
-    .pdf-modal { background: #2c2c2e; }
-    .pdf-modal-title { color: #34d399; }
-    .pdf-modal-label { color: #888; }
-    .pdf-modal-input { background: #3a3a3c; border-color: #48484a; color: #f5f5f5; }
-    .pdf-modal-input:focus { border-color: #34d399; background: #3a3a3c; }
-    .pdf-modal-sep { background: #3a3a3c; }
-    .pdf-modal-hint { color: #777; }
-    .pdf-modal-cancel { background: #3a3a3c; color: #e8e8e8; }
-  }
-
   .therapy-info-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.4);
     display: flex; align-items: center; justify-content: center;
@@ -570,98 +551,6 @@
   }
   .data-delete-select:focus { border-color: #1D9E75; }
 
-  @media (prefers-color-scheme: dark) {
-    .data-card { background: #2c2c2e; border-color: #3a3a3c; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
-    .data-card-title { color: #f5f5f5; }
-    .data-card-desc { color: #bbb; }
-    .data-card-row label { color: #ccc; }
-    .data-card-row input[type=date] { background: #3a3a3c; border-color: #4a4a4c; color: #e8e8e8; }
-    .data-action-btn.secondary { background: #3a3a3c; color: #e8e8e8; }
-    .data-file-label { border-color: #555; color: #ccc; }
-    .data-delete-select { background: #3a3a3c; border-color: #4a4a4c; color: #e8e8e8; }
-  }
-
-  @media (prefers-color-scheme: dark) {
-    body { background: #1a1a1a; }
-    #app { background: #1c1c1e; }
-    .app-header { background: #1c1c1e; border-color: #2c2c2e; }
-    .app-title { color: #b0b0b0; }
-    .app-subtitle { color: #f5f5f5; }
-    .date-badge { background: #0F6E56; color: #85E6BB; }
-    .organ-block { background: #2c2c2e; border-color: #3a3a3c; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
-    .organ-title { color: #eee; }
-    .slider-label { color: #ccc; }
-    .slider-val { color: #85E6BB; }
-    .slider-row input[type=range] { background: linear-gradient(to right, #4CAF50 0%, #FFC107 50%, #F44336 100%); }
-    .therapy-btn { background: #2c2c2e; border-color: #3a3a3c; color: #e8e8e8; }
-    .therapy-btn.active {
-      background: linear-gradient(135deg, #0F6E56 0%, #085041 100%);
-      border-color: #1D9E75;
-      color: #fff;
-      box-shadow: 0 4px 12px rgba(29, 158, 117, 0.3);
-    }
-    .therapy-dot { background: #666; }
-    .save-btn { background: linear-gradient(135deg, #1D9E75 0%, #15765f 100%); }
-    .saved-toast { background: #1D9E75; }
-    .bottom-nav { background: rgba(28, 28, 30, 0.95); border-color: #2c2c2e; }
-    .nav-btn { color: #888; }
-    .nav-btn.active { color: #4DCFA0; }
-    .lang-card { background: #1c1c1e; border-color: #3a3a3c; }
-    .lang-card.active { background: #0d2b22; border-color: #1D9E75; }
-    .lang-card-name { color: #f0f0f0; }
-    .lang-screen-grid { background: #000; }
-    .cal-month-nav { border-color: #2c2c2e; }
-    .cal-month-nav button { border-color: #3a3a3c; color: #f0f0f0; background: #2c2c2e; }
-    .cal-month-title { color: #f5f5f5; }
-    .cal-day { color: #e0e0e0; }
-    .cal-day-header { color: #999; }
-    .cal-day:hover { background: #3a3a3c; }
-    .cal-day.today { color: #4DCFA0; }
-    .cal-day.has-data::after { background: #4DCFA0; }
-    .range-btn { background: #2c2c2e; border-color: #3a3a3c; color: #e0e0e0; }
-    .range-btn.active {
-      background: linear-gradient(135deg, #1D9E75 0%, #15765f 100%);
-      border-color: #1D9E75;
-      color: #fff;
-      box-shadow: 0 2px 8px rgba(29, 158, 117, 0.3);
-    }
-    .date-range-row label { color: #ccc; }
-    .date-range-row input[type=date] { background: #2c2c2e; border-color: #3a3a3c; color: #e8e8e8; }
-    .chart-title { color: #ccc; }
-    .chart-section { color: #e0e0e0; }
-    .chart-vlabel { color: #aaa; }
-    .legend-item { color: #ccc; }
-    .section-label { color: #999; border-left-color: #4DCFA0; }
-    .zoom-btn { background: #2c2c2e; border-color: #3a3a3c; color: #e8e8e8; }
-    .zoom-label { color: #bbb; }
-    .pdf-btn { background: linear-gradient(135deg, #1D9E75 0%, #15765f 100%); color: white; border-color: #1D9E75; }
-    .info-card { background: #2c2c2e; border-color: #3a3a3c; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
-    .info-role { color: #4DCFA0; }
-    .info-name { color: #f5f5f5; }
-    .info-specialty { color: #ccc; }
-    .info-line { color: #e0e0e0; }
-    .info-line a { color: #4DCFA0; }
-    .info-contact-title { color: #999; }
-    .info-version { color: #777; }
-    .copy-bar { background: #2c2c2e; border-color: #3a3a3c; }
-    .copy-btn { background: #0F6E56; border-color: #1D9E75; color: #85E6BB; }
-    .auto-copy-label { color: #aaa; }
-    .reminder-card { background: #2c2c2e; border-color: #3a3a3c; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
-    .reminder-title { color: #f5f5f5; }
-    .reminder-desc { color: #bbb; }
-    .reminder-time-row label { color: #ccc; }
-    .reminder-time-row input[type=time] { background: #3a3a3c; border-color: #4a4a4c; color: #e8e8e8; }
-    .reminder-toggle-label { color: #ccc; }
-    .reminder-status { color: #4DCFA0; }
-    .toggle-switch { background: #555; }
-    .toggle-switch.active { background: #1D9E75; }
-    .therapy-info-overlay { background: rgba(0,0,0,0.6); }
-    .therapy-info-box { background: #2c2c2e; box-shadow: 0 12px 40px rgba(0,0,0,0.4); }
-    .therapy-info-title { color: #4DCFA0; }
-    .therapy-info-text { color: #ccc; }
-    .therapy-info-text a { color: #4DCFA0; }
-    .therapy-info-close { background: #3a3a3c; color: #e8e8e8; }
-  }
 </style>
 </head>
 <body>
@@ -1794,10 +1683,9 @@ function renderStats() {
   }
 
   // Dark mode
-  const isDark = !pdfExportMode && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const gridColor      = pdfExportMode ? 'rgba(0,0,0,0.12)' : (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)');
-  const gridColorLight = pdfExportMode ? 'rgba(0,0,0,0.07)' : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)');
-  const tickColor      = pdfExportMode ? '#222' : (isDark ? '#ccc' : '#555');
+  const gridColor      = 'rgba(0,0,0,0.06)';
+  const gridColorLight = 'rgba(0,0,0,0.04)';
+  const tickColor      = '#555';
 
   // Shared x-axis (hidden on middle charts, shown on top/bottom)
   const xHidden = { display: true, ticks: { display: false }, grid: { color: gridColor } };
