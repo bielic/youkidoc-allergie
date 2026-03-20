@@ -1407,7 +1407,17 @@ function collectFormData() {
 function loadFormData(entry) {
   document.querySelectorAll('.symptom-slider').forEach(sl => {
     const organ = sl.dataset.organ; const sym = sl.dataset.sym;
-    const val = entry && entry.symptoms && entry.symptoms[organ] ? (entry.symptoms[organ][sym] || 0) : 0;
+    let val = 0;
+    if (entry && entry.symptoms && entry.symptoms[organ]) {
+      const organData = entry.symptoms[organ];
+      if (sym in organData) {
+        val = organData[sym] || 0;
+      } else if (sym === 'score' && Object.keys(organData).length > 0) {
+        // Backward compat: average sub-symptoms from old multi-symptom entries
+        const vals = Object.values(organData).filter(v => typeof v === 'number');
+        if (vals.length) val = Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
+      }
+    }
     sl.value = val;
     const valDisplay = sl.parentNode.querySelector('.slider-val');
     valDisplay.textContent = val;
