@@ -3,126 +3,176 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Youkidoc Icon-Auswahl</title>
+<title>Icon Vorschau – Laufende Nase & Blüte</title>
 <style>
-  body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f2f2f7; margin: 0; padding: 24px 16px; }
-  h1 { font-size: 18px; color: #111; margin-bottom: 4px; }
-  p { font-size: 13px; color: #666; margin-bottom: 24px; }
-  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 480px; margin: 0 auto; }
-  .icon-option { background: white; border-radius: 20px; padding: 20px; text-align: center; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
-  .icon-label { font-size: 12px; font-weight: 600; color: #555; margin-top: 12px; margin-bottom: 4px; }
-  .icon-desc { font-size: 11px; color: #999; line-height: 1.4; }
-  svg { border-radius: 22.5%; display: block; margin: 0 auto; }
-  .option-num { font-size: 11px; color: #1D9E75; font-weight: 700; margin-bottom: 8px; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #e2e2e2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px;
+    min-height: 100vh;
+  }
+  h1 { font-size: 17px; color: #444; margin-bottom: 28px; font-weight: 600; letter-spacing: 0.01em; }
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; max-width: 460px; width: 100%; }
+  .card {
+    background: white;
+    border-radius: 20px;
+    padding: 28px 16px 18px;
+    text-align: center;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.11);
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .card:hover { transform: translateY(-3px); box-shadow: 0 8px 26px rgba(0,0,0,0.17); }
+  .card svg { border-radius: 22%; display: block; margin: 0 auto; }
+  .card h3 { margin-top: 14px; font-size: 14px; color: #222; font-weight: 700; }
+  .card p { font-size: 11px; color: #aaa; margin-top: 3px; }
 </style>
 </head>
 <body>
-<h1>Icon-Auswahl</h1>
-<p>Bitte wählen Sie Ihren bevorzugten Icon-Stil für die App.</p>
-
+<h1>4 Icon-Varianten — Laufende Nase &amp; Blüte</h1>
 <div class="grid">
 
-  <!-- Option 1: Leaf + Cross (grün, medizinisch) -->
-  <div class="icon-option">
-    <div class="option-num">Option 1</div>
-    <svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-      <rect width="120" height="120" rx="27" fill="#1D9E75"/>
-      <!-- Weisses Kreuz -->
-      <rect x="52" y="22" width="16" height="76" rx="8" fill="white" opacity="0.95"/>
-      <rect x="22" y="52" width="76" height="16" rx="8" fill="white" opacity="0.95"/>
-      <!-- Grüne Blatt-Highlights -->
-      <circle cx="60" cy="60" r="10" fill="#15765f"/>
+  <!-- Option 1: Grün klassisch -->
+  <div class="card">
+    <svg width="150" height="150" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      <rect width="200" height="200" rx="44" fill="#1D9E75"/>
+      <!-- Nose front-view: arch + body -->
+      <path d="M 76,94 Q 100,62 124,94 L 123,120 Q 115,132 100,132 Q 85,132 77,120 Z" fill="white" opacity="0.95"/>
+      <!-- Nostrils -->
+      <ellipse cx="88" cy="118" rx="11" ry="8" fill="#1D9E75" opacity="0.38"/>
+      <ellipse cx="112" cy="118" rx="11" ry="8" fill="#1D9E75" opacity="0.38"/>
+      <!-- Drip from right nostril -->
+      <ellipse cx="116" cy="141" rx="6" ry="9" fill="white" opacity="0.92"/>
+      <ellipse cx="116" cy="158" rx="4" ry="6" fill="white" opacity="0.68"/>
+      <!-- Flower top-right: 5 petals -->
+      <g transform="translate(156,46)">
+        <ellipse cx="0" cy="-16" rx="7" ry="12" fill="white" opacity="0.88"/>
+        <ellipse cx="0" cy="-16" rx="7" ry="12" fill="white" opacity="0.88" transform="rotate(72,0,0)"/>
+        <ellipse cx="0" cy="-16" rx="7" ry="12" fill="white" opacity="0.88" transform="rotate(144,0,0)"/>
+        <ellipse cx="0" cy="-16" rx="7" ry="12" fill="white" opacity="0.88" transform="rotate(216,0,0)"/>
+        <ellipse cx="0" cy="-16" rx="7" ry="12" fill="white" opacity="0.88" transform="rotate(288,0,0)"/>
+        <circle cx="0" cy="0" r="8" fill="#FFC107"/>
+      </g>
+      <!-- Pollen dots -->
+      <circle cx="44" cy="52" r="4" fill="white" opacity="0.28"/>
+      <circle cx="36" cy="70" r="3" fill="white" opacity="0.18"/>
     </svg>
-    <div class="icon-label">Medizinisch</div>
-    <div class="icon-desc">Grünes Kreuz – klar, professionell, medizinisch</div>
+    <h3>Option 1 – Grün</h3>
+    <p>Klassisch, Nase + Blüte</p>
   </div>
 
-  <!-- Option 2: Blume + Pollen (Allergie-Motiv) -->
-  <div class="icon-option">
-    <div class="option-num">Option 2</div>
-    <svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="g2" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#2DC88A"/>
-          <stop offset="100%" stop-color="#0F7A58"/>
-        </linearGradient>
-      </defs>
-      <rect width="120" height="120" rx="27" fill="url(#g2)"/>
-      <!-- Blütenblätter -->
-      <ellipse cx="60" cy="32" rx="9" ry="18" fill="white" opacity="0.9"/>
-      <ellipse cx="60" cy="88" rx="9" ry="18" fill="white" opacity="0.9"/>
-      <ellipse cx="32" cy="60" rx="18" ry="9" fill="white" opacity="0.9"/>
-      <ellipse cx="88" cy="60" rx="18" ry="9" fill="white" opacity="0.9"/>
-      <ellipse cx="39" cy="39" rx="9" ry="18" fill="white" opacity="0.75" transform="rotate(-45 39 39)"/>
-      <ellipse cx="81" cy="39" rx="9" ry="18" fill="white" opacity="0.75" transform="rotate(45 81 39)"/>
-      <ellipse cx="39" cy="81" rx="9" ry="18" fill="white" opacity="0.75" transform="rotate(45 39 81)"/>
-      <ellipse cx="81" cy="81" rx="9" ry="18" fill="white" opacity="0.75" transform="rotate(-45 81 81)"/>
-      <!-- Zentrum -->
-      <circle cx="60" cy="60" r="16" fill="#FFD166"/>
-      <circle cx="60" cy="60" r="10" fill="#FFA500"/>
+  <!-- Option 2: Rosa – Kirschblüte dominiert -->
+  <div class="card">
+    <svg width="150" height="150" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      <rect width="200" height="200" rx="44" fill="#FFF2F6"/>
+      <!-- Large cherry blossom 5 petals -->
+      <g transform="translate(100,96)">
+        <ellipse cx="0" cy="-42" rx="20" ry="30" fill="#FFB3CB" opacity="0.90"/>
+        <ellipse cx="0" cy="-42" rx="20" ry="30" fill="#FFB3CB" opacity="0.90" transform="rotate(72,0,0)"/>
+        <ellipse cx="0" cy="-42" rx="20" ry="30" fill="#FFB3CB" opacity="0.90" transform="rotate(144,0,0)"/>
+        <ellipse cx="0" cy="-42" rx="20" ry="30" fill="#FFB3CB" opacity="0.90" transform="rotate(216,0,0)"/>
+        <ellipse cx="0" cy="-42" rx="20" ry="30" fill="#FFB3CB" opacity="0.90" transform="rotate(288,0,0)"/>
+        <!-- Petal notch detail -->
+        <ellipse cx="0" cy="-66" rx="4" ry="6" fill="#FFF2F6" opacity="0.80"/>
+        <ellipse cx="0" cy="-66" rx="4" ry="6" fill="#FFF2F6" opacity="0.80" transform="rotate(72,0,0)"/>
+        <ellipse cx="0" cy="-66" rx="4" ry="6" fill="#FFF2F6" opacity="0.80" transform="rotate(144,0,0)"/>
+        <ellipse cx="0" cy="-66" rx="4" ry="6" fill="#FFF2F6" opacity="0.80" transform="rotate(216,0,0)"/>
+        <ellipse cx="0" cy="-66" rx="4" ry="6" fill="#FFF2F6" opacity="0.80" transform="rotate(288,0,0)"/>
+        <!-- White centre disk -->
+        <circle cx="0" cy="0" r="24" fill="#FFF2F6"/>
+        <!-- Nose in centre -->
+        <path d="M -14,7 Q 0,-12 14,7 L 13,22 Q 6,28 0,28 Q -6,28 -13,22 Z" fill="#1D9E75" opacity="0.88"/>
+        <ellipse cx="-7" cy="22" rx="7" ry="5" fill="#FFF2F6" opacity="0.55"/>
+        <ellipse cx="7" cy="22" rx="7" ry="5" fill="#FFF2F6" opacity="0.55"/>
+        <!-- Drip -->
+        <ellipse cx="10" cy="34" rx="5" ry="7" fill="#1D9E75" opacity="0.78"/>
+        <ellipse cx="10" cy="47" rx="3.5" ry="5" fill="#1D9E75" opacity="0.54"/>
+      </g>
+      <!-- Pollen floating -->
+      <circle cx="44" cy="50" r="5" fill="#FFC107" opacity="0.85"/>
+      <circle cx="155" cy="44" r="4" fill="#FFC107" opacity="0.75"/>
+      <circle cx="36" cy="148" r="3.5" fill="#FFB3CB" opacity="0.80"/>
+      <circle cx="162" cy="152" r="4" fill="#FFC107" opacity="0.65"/>
     </svg>
-    <div class="icon-label">Allergie-Blüte</div>
-    <div class="icon-desc">Stilisierte Blüte – symbolisiert Allergien &amp; Natur</div>
+    <h3>Option 2 – Kirschblüte</h3>
+    <p>Blüte mit Nase im Zentrum</p>
   </div>
 
-  <!-- Option 3: Tagebuch / Notiz (Beschwerdetagebuch) -->
-  <div class="icon-option">
-    <div class="option-num">Option 3</div>
-    <svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <!-- Option 3: Weiß/Duo – Nase links, Blüte rechts -->
+  <div class="card">
+    <svg width="150" height="150" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      <rect width="200" height="200" rx="44" fill="#F4FDFB"/>
+      <!-- Teal border -->
+      <rect width="200" height="200" rx="44" fill="none" stroke="#1D9E75" stroke-width="9"/>
+      <!-- Nose side profile (facing right) -->
+      <path d="M 56,58 C 54,58 46,78 48,106 C 49,122 58,134 74,138 C 86,141 98,137 102,128 C 106,119 100,110 90,110 C 82,110 76,118 78,126"
+            fill="none" stroke="#1D9E75" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+      <!-- Nostril area -->
+      <circle cx="78" cy="130" r="9" fill="#1D9E75" opacity="0.20"/>
+      <!-- Drip drops -->
+      <ellipse cx="82" cy="147" rx="7" ry="10" fill="#1D9E75" opacity="0.72"/>
+      <ellipse cx="82" cy="164" rx="5" ry="7" fill="#1D9E75" opacity="0.46"/>
+      <!-- Flower right: 5 petals -->
+      <g transform="translate(144,96)">
+        <ellipse cx="0" cy="-33" rx="15" ry="23" fill="#FFB3CB" opacity="0.88"/>
+        <ellipse cx="0" cy="-33" rx="15" ry="23" fill="#FFB3CB" opacity="0.88" transform="rotate(72,0,0)"/>
+        <ellipse cx="0" cy="-33" rx="15" ry="23" fill="#FFB3CB" opacity="0.88" transform="rotate(144,0,0)"/>
+        <ellipse cx="0" cy="-33" rx="15" ry="23" fill="#FFB3CB" opacity="0.88" transform="rotate(216,0,0)"/>
+        <ellipse cx="0" cy="-33" rx="15" ry="23" fill="#FFB3CB" opacity="0.88" transform="rotate(288,0,0)"/>
+        <circle cx="0" cy="0" r="16" fill="#FFC107"/>
+        <circle cx="0" cy="0" r="9" fill="#FFE566"/>
+      </g>
+      <!-- Soft divider -->
+      <line x1="113" y1="42" x2="113" y2="168" stroke="#1D9E75" stroke-width="1.5" stroke-dasharray="4,5" opacity="0.22"/>
+    </svg>
+    <h3>Option 3 – Duo</h3>
+    <p>Nase &amp; Blüte nebeneinander</p>
+  </div>
+
+  <!-- Option 4: Dunkelgrün – Blütenkranz + Nase -->
+  <div class="card">
+    <svg width="150" height="150" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <linearGradient id="g3" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#34D399"/>
+        <linearGradient id="g4" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#0A5C48"/>
           <stop offset="100%" stop-color="#1D9E75"/>
         </linearGradient>
       </defs>
-      <rect width="120" height="120" rx="27" fill="url(#g3)"/>
-      <!-- Buch -->
-      <rect x="26" y="24" width="68" height="72" rx="8" fill="white" opacity="0.95"/>
-      <rect x="26" y="24" width="12" height="72" rx="6" fill="#15765f" opacity="0.4"/>
-      <!-- Linien -->
-      <line x1="46" y1="46" x2="82" y2="46" stroke="#1D9E75" stroke-width="3.5" stroke-linecap="round"/>
-      <line x1="46" y1="58" x2="82" y2="58" stroke="#1D9E75" stroke-width="3.5" stroke-linecap="round"/>
-      <line x1="46" y1="70" x2="68" y2="70" stroke="#1D9E75" stroke-width="3.5" stroke-linecap="round"/>
-      <!-- Herz-Puls -->
-      <polyline points="46,82 52,82 55,74 59,90 63,78 66,82 82,82" fill="none" stroke="#D85A30" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <rect width="200" height="200" rx="44" fill="url(#g4)"/>
+      <!-- Wreath: 8 petals at edge -->
+      <g transform="translate(100,100)">
+        <ellipse cx="0" cy="-62" rx="11" ry="20" fill="white" opacity="0.22"/>
+        <ellipse cx="0" cy="-62" rx="11" ry="20" fill="white" opacity="0.22" transform="rotate(45,0,0)"/>
+        <ellipse cx="0" cy="-62" rx="11" ry="20" fill="white" opacity="0.22" transform="rotate(90,0,0)"/>
+        <ellipse cx="0" cy="-62" rx="11" ry="20" fill="white" opacity="0.22" transform="rotate(135,0,0)"/>
+        <ellipse cx="0" cy="-62" rx="11" ry="20" fill="white" opacity="0.22" transform="rotate(180,0,0)"/>
+        <ellipse cx="0" cy="-62" rx="11" ry="20" fill="white" opacity="0.22" transform="rotate(225,0,0)"/>
+        <ellipse cx="0" cy="-62" rx="11" ry="20" fill="white" opacity="0.22" transform="rotate(270,0,0)"/>
+        <ellipse cx="0" cy="-62" rx="11" ry="20" fill="white" opacity="0.22" transform="rotate(315,0,0)"/>
+        <!-- Nose front-view centred -->
+        <path d="M -24,8 Q 0,-24 24,8 L 22,32 Q 12,44 0,44 Q -12,44 -22,32 Z" fill="white" opacity="0.94"/>
+        <ellipse cx="-12" cy="30" rx="10" ry="7" fill="#0A5C48" opacity="0.40"/>
+        <ellipse cx="12" cy="30" rx="10" ry="7" fill="#0A5C48" opacity="0.40"/>
+        <!-- Drip -->
+        <ellipse cx="16" cy="53" rx="6" ry="9" fill="white" opacity="0.88"/>
+        <ellipse cx="16" cy="69" rx="4.5" ry="6.5" fill="white" opacity="0.60"/>
+      </g>
+      <!-- Pollen corners -->
+      <circle cx="42" cy="40" r="6" fill="#FFC107" opacity="0.95"/>
+      <circle cx="158" cy="38" r="5" fill="#FFC107" opacity="0.85"/>
+      <circle cx="160" cy="162" r="6" fill="#FFC107" opacity="0.80"/>
+      <circle cx="40" cy="162" r="5" fill="#FFC107" opacity="0.90"/>
+      <circle cx="28" cy="100" r="3" fill="#FFC107" opacity="0.48"/>
+      <circle cx="172" cy="100" r="3" fill="#FFC107" opacity="0.48"/>
     </svg>
-    <div class="icon-label">Tagebuch</div>
-    <div class="icon-desc">Buch mit Herzschlag – Beschwerdetagebuch-Motiv</div>
-  </div>
-
-  <!-- Option 4: Lunge + Blatt (modern, Kinder) -->
-  <div class="icon-option">
-    <div class="option-num">Option 4</div>
-    <svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="g4" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#1D9E75"/>
-          <stop offset="100%" stop-color="#0A5C45"/>
-        </linearGradient>
-      </defs>
-      <rect width="120" height="120" rx="27" fill="url(#g4)"/>
-      <!-- "Y" für Youkidoc, gross und bold -->
-      <text x="60" y="76" font-size="72" font-family="-apple-system, Arial, sans-serif" font-weight="900"
-            text-anchor="middle" fill="white" opacity="0.15">Y</text>
-      <!-- Lunge stilisiert -->
-      <!-- Bronchus/Stamm -->
-      <line x1="60" y1="52" x2="60" y2="82" stroke="white" stroke-width="5" stroke-linecap="round"/>
-      <!-- Linke Lunge -->
-      <path d="M60 62 Q38 58 34 72 Q30 86 42 90 Q52 93 56 82 L60 82" fill="white" opacity="0.9"/>
-      <!-- Rechte Lunge -->
-      <path d="M60 62 Q82 58 86 72 Q90 86 78 90 Q68 93 64 82 L60 82" fill="white" opacity="0.9"/>
-      <!-- Blatt oben -->
-      <path d="M60 52 Q50 30 60 22 Q70 30 60 52Z" fill="#FFD166"/>
-      <line x1="60" y1="22" x2="60" y2="52" stroke="#1D9E75" stroke-width="1.5" opacity="0.6"/>
-    </svg>
-    <div class="icon-label">Lunge &amp; Blatt</div>
-    <div class="icon-desc">Lunge mit Blatt – Pneumologie &amp; Natur</div>
+    <h3>Option 4 – Kranz</h3>
+    <p>Blütenkranz, Nase zentriert</p>
   </div>
 
 </div>
-
-<p style="text-align:center;margin-top:24px;font-size:12px;color:#aaa;">
-  Teilen Sie mir Ihre bevorzugte Option mit (1–4)
-</p>
 </body>
 </html>
