@@ -2104,7 +2104,7 @@ async function doExportPDF() {
       if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
         await navigator.share({
           files: [pdfFile],
-          title: 'Youkidoc Beschwerdetagebuch',
+          title: 'Beschwerdetagebuch',
           text: `Beschwerdetagebuch${patientName ? ' – ' + patientName : ''}`
         });
         showToast(t('toast_pdf_shared'));
