@@ -1654,6 +1654,28 @@ function closeTherapyInfo(e) {
   document.getElementById('therapy-info-overlay').classList.remove('show');
 }
 
+function showGuide(platform) {
+  const isIos = platform === 'ios';
+  const installSteps = t(isIos ? 'guide_ios_install' : 'guide_android_install');
+  const notifSteps = t(isIos ? 'guide_ios_notif' : 'guide_android_notif');
+  document.getElementById('guide-sheet-title').textContent = t(isIos ? 'note_guide_ios' : 'note_guide_android');
+  function buildSteps(steps) {
+    return '<ul class="guide-steps">' + steps.map((s, i) =>
+      `<li class="guide-step"><span class="guide-step-num">${i+1}</span><span>${s}</span></li>`
+    ).join('') + '</ul>';
+  }
+  document.getElementById('guide-sheet-body').innerHTML =
+    `<div class="guide-section"><div class="guide-section-title">${t('guide_install_title')}</div>${buildSteps(installSteps)}</div>` +
+    `<div class="guide-divider"></div>` +
+    `<div class="guide-section"><div class="guide-section-title">${t('guide_notif_title')}</div>${buildSteps(notifSteps)}</div>`;
+  document.getElementById('guide-overlay').classList.add('show');
+}
+
+function closeGuideModal(e) {
+  if (e && e.target !== document.getElementById('guide-overlay') && !e.target.classList.contains('guide-sheet-close')) return;
+  document.getElementById('guide-overlay').classList.remove('show');
+}
+
 function collectFormData() {
   const symptoms = {};
   document.querySelectorAll('.symptom-slider').forEach(sl => {
