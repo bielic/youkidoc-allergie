@@ -849,16 +849,7 @@
       <button class="zoom-btn pdf-btn" onclick="showPdfModal()" title="PDF Export">PDF</button>
     </div>
     <div class="stats-charts" id="stats-charts">
-      <!-- 1. Beschwerden: Augen, Nase, Haut (x-axis top: year + month) -->
-      <div class="chart-row chart-row-organ">
-        <div class="chart-vlabel" data-i18n="chart_organ">Augen, Nase, Haut</div>
-        <div class="chart-canvas-wrap"><canvas id="symptomChart"></canvas></div>
-      </div>
-      <!-- 2. Therapie: AH, A, N -->
-      <div class="chart-row chart-row-th1">
-        <div class="chart-vlabel" data-i18n="chart_therapy">Therapie</div>
-        <div class="chart-canvas-wrap"><canvas id="therapyChart1"></canvas></div>
-      </div>
+      <!-- 1. Pollen (x-axis top: year + month) -->
       <!-- Pollen controls (sits above the chart row) -->
       <div class="pollen-ctrl-row">
         <div class="pollen-ctrl-spacer"></div>
@@ -877,12 +868,22 @@
       </div>
       <div class="pollen-source">© MeteoSwiss</div>
 
-      <!-- 3. Lunge -->
+      <!-- 2. Beschwerden: Augen, Nase, Haut -->
+      <div class="chart-row chart-row-organ">
+        <div class="chart-vlabel" data-i18n="chart_organ">Augen, Nase, Haut</div>
+        <div class="chart-canvas-wrap"><canvas id="symptomChart"></canvas></div>
+      </div>
+      <!-- 3. Therapie: AH, A, N -->
+      <div class="chart-row chart-row-th1">
+        <div class="chart-vlabel" data-i18n="chart_therapy">Therapie</div>
+        <div class="chart-canvas-wrap"><canvas id="therapyChart1"></canvas></div>
+      </div>
+      <!-- 4. Lunge -->
       <div class="chart-row chart-row-lung">
         <div class="chart-vlabel" data-i18n="chart_lung">Lunge</div>
         <div class="chart-canvas-wrap"><canvas id="lungChart"></canvas></div>
       </div>
-      <!-- 4. Therapie: IN, ID, B (x-axis bottom: dates) -->
+      <!-- 5. Therapie: IN, ID, B (x-axis bottom: dates) -->
       <div class="chart-row chart-row-th2">
         <div class="chart-vlabel" data-i18n="chart_therapy">Therapie</div>
         <div class="chart-canvas-wrap"><canvas id="therapyChart2"></canvas></div>
