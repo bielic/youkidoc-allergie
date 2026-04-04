@@ -2661,6 +2661,7 @@ async function doExportPDF() {
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(r, 120))));
 
     // 2) Grab each chart canvas as a white-background JPEG
+    const imgPollen = chartToJpeg('pollenChart');
     const imgSym  = chartToJpeg('symptomChart');
     const imgTh1  = chartToJpeg('therapyChart1');
     const imgLung = chartToJpeg('lungChart');
