@@ -2704,12 +2704,16 @@ async function doExportPDF() {
     // ── Charts ────────────────────────────────────────────────────────────
     // Distribute remaining vertical space proportionally (leave 22mm for legend + footer)
     const chartAreaH = PH - y - MY - 22;
-    const screenPx   = { sym: 175, th1: 70, lung: 110, th2: 115 };
+    const hasPollen  = !!imgPollen;
+    const screenPx   = hasPollen
+      ? { pollen: 100, sym: 145, th1: 60, lung: 95, th2: 100 }
+      : { sym: 175, th1: 70, lung: 110, th2: 115 };
     const totalPx    = Object.values(screenPx).reduce((a,b)=>a+b,0);
     const gap        = 2.5; // mm between charts
-    const totalGaps  = 3 * gap;
+    const totalGaps  = (Object.keys(screenPx).length - 1) * gap;
     const scale      = (chartAreaH - totalGaps) / totalPx;
-    const CH = { sym: screenPx.sym*scale, th1: screenPx.th1*scale, lung: screenPx.lung*scale, th2: screenPx.th2*scale };
+    const CH = {};
+    for (const [k,v] of Object.entries(screenPx)) CH[k] = v * scale;
 
     // Vertical rotated label helper
     function vLabel(text, cy, ch) {
@@ -2717,15 +2721,33 @@ async function doExportPDF() {
       pdf.text(text, MX + LBLW - 1, cy + ch / 2, { angle: 90, align: 'center' });
     }
 
-    const charts = [
+    const charts = [];
+    if (hasPollen) {
+      // Pollen label: include station name + pollen type if available
+      const stnObj   = pollenStations.find(s => s.abbr === currentPollenStn);
+      const stnLabel = stnObj ? stnObj.name : (currentPollenStn || '');
+      const typeLabel = pollenTypeName(currentPollenType);
+      charts.push({ img: imgPollen, label: t('chart_pollen'), sub: `${typeLabel} · ${stnLabel}`, h: CH.pollen, source: '© MeteoSwiss' });
+    }
+    charts.push(
       { img: imgSym,  label: t('chart_organ'),   h: CH.sym  },
       { img: imgTh1,  label: t('chart_therapy'), h: CH.th1  },
       { img: imgLung, label: t('chart_lung'),    h: CH.lung },
       { img: imgTh2,  label: t('chart_therapy'), h: CH.th2  },
-    ];
+    );
     for (const c of charts) {
       vLabel(c.label, y, c.h);
       if (c.img) pdf.addImage(c.img, 'JPEG', CX, y, CW, c.h);
+      // Sub-label (e.g. pollen type + station) — small text top-right of chart
+      if (c.sub) {
+        pdf.setFontSize(6); pdf.setTextColor(120);
+        pdf.text(c.sub, CX + CW - 0.5, y + 3.5, { align: 'right' });
+      }
+      // Source attribution bottom-right
+      if (c.source) {
+        pdf.setFontSize(5.5); pdf.setTextColor(170);
+        pdf.text(c.source, CX + CW - 0.5, y + c.h - 1, { align: 'right' });
+      }
       y += c.h + gap;
     }
     y += 1;
