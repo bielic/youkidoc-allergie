@@ -2488,7 +2488,36 @@ function renderStats() {
     });
   }
 
-  // 1) Organ symptom chart (x-axis top = year + month names)
+  // Shared x-axis config: year + month labels at top (used by topmost chart)
+  const xTopYearMonth = {
+    position: 'top',
+    afterBuildTicks: axis => {
+      axis.ticks = dates.reduce((acc, d, i) => {
+        const [,m,day] = d.split('-');
+        if (day === '01' || i === 0) acc.push({ value: i });
+        return acc;
+      }, []);
+    },
+    ticks: {
+      font:{size:8}, color: tickColor, maxRotation: 0, autoSkip: false,
+      callback: (value, index, allTicks) => {
+        const dateIdx = allTicks[index] ? allTicks[index].value : -1;
+        const d = dates[dateIdx];
+        if (!d) return '';
+        const [y,m] = d.split('-');
+        const mon = MONAT_NAMEN[parseInt(m)-1];
+        const prevTick = allTicks[index - 1];
+        const prevYear = prevTick ? (dates[prevTick.value] || '').split('-')[0] : '';
+        return (y !== prevYear) ? [y, mon] : mon;
+      }
+    },
+    grid: { color: gridColor }
+  };
+
+  // 1) Pollen chart (MeteoSwiss) — topmost, carries year+month x-axis
+  renderPollenChart(dates, labels, xTopYearMonth, gridColor, tickColor, isDark);
+
+  // 2) Organ symptom chart
   if (chartSymptom) chartSymptom.destroy();
   chartSymptom = new Chart(document.getElementById('symptomChart'), {
     type: 'line',
@@ -2506,40 +2535,13 @@ function renderStats() {
       plugins: { legend: { display: false } },
       scales: {
         y: { min:0, beginAtZero:true, ticks:{ font:{size:9}, color: tickColor }, grid:{color: gridColor} },
-        x: {
-          position: 'top',
-          afterBuildTicks: axis => {
-            axis.ticks = dates.reduce((acc, d, i) => {
-              const [,m,day] = d.split('-');
-              if (day === '01' || i === 0) acc.push({ value: i });
-              return acc;
-            }, []);
-          },
-          ticks: {
-            font:{size:8}, color: tickColor, maxRotation: 0, autoSkip: false,
-            callback: (value, index, allTicks) => {
-              // For category axis: value = label string; numeric index is in allTicks[index].value
-              const dateIdx = allTicks[index] ? allTicks[index].value : -1;
-              const d = dates[dateIdx];
-              if (!d) return '';
-              const [y,m] = d.split('-');
-              const mon = MONAT_NAMEN[parseInt(m)-1];
-              const prevTick = allTicks[index - 1];
-              const prevYear = prevTick ? (dates[prevTick.value] || '').split('-')[0] : '';
-              return (y !== prevYear) ? [y, mon] : mon;
-            }
-          },
-          grid: { color: gridColor }
-        }
+        x: xHidden
       }
     }
   });
 
-  // 2) Therapy group 1: AH, A, N
+  // 3) Therapy group 1: AH, A, N
   chartTherapy1 = makeTherapyChart('therapyChart1', THERAPY_GROUP1, chartTherapy1);
-
-  // Pollen chart (MeteoSwiss)
-  renderPollenChart(dates, labels, xHidden, gridColor, tickColor, isDark);
 
   // 3) Lung chart
   if (chartLung) chartLung.destroy();
