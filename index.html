@@ -2003,7 +2003,8 @@ const POLLEN_KEYWORDS = {
 };
 
 let pollenStations     = [];
-let pollenCache        = {};   // { STN: { 'YYYY-MM-DD': { Betula:12.4, ... } } }
+let pollenDataUrls     = {};   // { STN: 'https://actual-url.csv' } from STAC
+let pollenCache        = {};   // { STN: { 'YYYY-MM-DD': { Betula:12.4, ... } } | null }
 let pollenMetaReady    = false;
 let pollenMetaLoading  = false;
 let pollenStnLoading   = false;
@@ -2031,29 +2032,6 @@ function setPollenUI(status) {
   }
 }
 
-// Parse station metadata CSV
-function parsePollenMeta(text) {
-  const lines = text.split('\n').filter(l => l.trim() && !l.startsWith('#'));
-  if (lines.length < 2) return [];
-  const sep  = lines[0].includes(';') ? ';' : ',';
-  const hdrs = lines[0].split(sep).map(h => h.trim().replace(/^"|"$/g,'').toLowerCase());
-
-  const fi = (...kw) => hdrs.findIndex(h => kw.some(k => h.includes(k)));
-  const abbrIdx   = fi('abbr','abbreviation','stn','kürzel');
-  const nameIdx   = fi('station name','name','standort');
-  const cantonIdx = fi('canton','kanton');
-
-  return lines.slice(1).map(line => {
-    const c = line.split(sep).map(x => x.trim().replace(/^"|"$/g,''));
-    if (!c[0]) return null;
-    return {
-      abbr:   ((abbrIdx >= 0 ? c[abbrIdx] : c[0]) || '').toUpperCase(),
-      name:    nameIdx >= 0 ? c[nameIdx] : (c[1] || c[0]),
-      canton:  cantonIdx >= 0 ? c[cantonIdx] : (c[2] || '')
-    };
-  }).filter(Boolean).filter(s => s.abbr).sort((a,b) => a.name.localeCompare(b.name));
-}
-
 // Parse station data CSV → { 'YYYY-MM-DD': { Betula:12, ... } }
 function parsePollenData(text) {
   const out = {};
@@ -2072,7 +2050,6 @@ function parsePollenData(text) {
   if (headerIdx < 0) return out;
 
   const timeIdx = headers.findIndex(h => ['time','date','datum','referenz_dt','zeitpunkt'].includes(h));
-  // Map pollen types → column index
   const colMap = {};
   headers.forEach((h, idx) => {
     for (const [key, kws] of Object.entries(POLLEN_KEYWORDS)) {
@@ -2087,7 +2064,7 @@ function parsePollenData(text) {
 
     let ds = timeIdx >= 0 ? c[timeIdx] : c[1];
     if (!ds) continue;
-    ds = ds.replace(/T.*$/, '');   // strip time component
+    ds = ds.replace(/T.*$/, '');
     if (/^\d{8}$/.test(ds)) ds = `${ds.slice(0,4)}-${ds.slice(4,6)}-${ds.slice(6,8)}`;
     if (!/^\d{4}-\d{2}-\d{2}$/.test(ds)) continue;
 
@@ -2115,49 +2092,108 @@ function populatePollenDropdowns() {
   ).join('');
 }
 
+// Fallback: hardcoded known MeteoSwiss pollen stations
+function loadPollenMetaFallback() {
+  const KNOWN = [
+    { abbr:'BAS', name:'Basel' },      { abbr:'BER', name:'Bern' },
+    { abbr:'CHU', name:'Chur' },       { abbr:'DAV', name:'Davos' },
+    { abbr:'GEN', name:'Genf' },       { abbr:'LAU', name:'Lausanne' },
+    { abbr:'LUG', name:'Lugano' },     { abbr:'LUZ', name:'Luzern' },
+    { abbr:'MLS', name:'Montana' },    { abbr:'NEU', name:'Neuchâtel' },
+    { abbr:'PAY', name:'Payerne' },    { abbr:'SIO', name:'Sitten' },
+    { abbr:'STG', name:'St. Gallen' }, { abbr:'VIS', name:'Visp' },
+    { abbr:'ZUE', name:'Zürich' }
+  ];
+  pollenStations = KNOWN;
+  for (const s of KNOWN) {
+    pollenDataUrls[s.abbr] = `https://data.geo.admin.ch/ch.meteoschweiz.ogd-pollen/ogd-pollen_${s.abbr.toLowerCase()}_d_recent.csv`;
+  }
+  pollenMetaReady = true;
+  if (!currentPollenStn || !pollenDataUrls[currentPollenStn]) {
+    currentPollenStn = 'ZUE';
+    localStorage.setItem('youkidoc_pollen_stn', currentPollenStn);
+  }
+  populatePollenDropdowns();
+}
+
 async function loadPollenMeta() {
   if (pollenMetaReady || pollenMetaLoading) return;
   pollenMetaLoading = true;
   setPollenUI('pollen_loading');
   try {
-    const r = await fetch('https://data.geo.admin.ch/ch.meteoschweiz.ogd-pollen/ogd-pollen_meta_stations.csv');
-    if (!r.ok) throw new Error(r.status);
-    const text = await r.text();
-    pollenStations = parsePollenMeta(text);
-    pollenMetaReady = true;
-    if (!currentPollenStn && pollenStations.length) {
-      currentPollenStn = pollenStations[0].abbr;
-      localStorage.setItem('youkidoc_pollen_stn', currentPollenStn);
+    // STAC API: get exact asset URLs for each station's d_recent CSV
+    const stacUrl = 'https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-pollen/items?limit=100';
+    const r = await fetch(stacUrl);
+    if (!r.ok) throw new Error('STAC HTTP ' + r.status);
+    const json = await r.json();
+
+    const stationsMap = {};
+    for (const feature of (json.features || [])) {
+      const props = feature.properties || {};
+      for (const [assetKey, asset] of Object.entries(feature.assets || {})) {
+        if (!asset.href) continue;
+        // Match asset key like "ogd-pollen_zue_d_recent" or href containing same pattern
+        const src = assetKey + ' ' + asset.href;
+        const m = src.match(/ogd.pollen[_-]([a-z]{2,6})[_-]d[_-]recent/i);
+        if (m) {
+          const stn = m[1].toUpperCase();
+          if (!stationsMap[stn]) {
+            // Prefer station name from properties; fall back to abbreviation
+            const name = props.title || props['station_name'] || props.name || stn;
+            stationsMap[stn] = { abbr: stn, name, canton: props.canton || '' };
+            pollenDataUrls[stn] = asset.href;
+          }
+        }
+      }
     }
-    populatePollenDropdowns();
-    await loadPollenStnData(currentPollenStn);
-    renderStats();
+
+    if (Object.keys(stationsMap).length > 0) {
+      pollenStations = Object.values(stationsMap).sort((a,b) => a.name.localeCompare(b.name));
+      pollenMetaReady = true;
+      console.log('Pollen: STAC OK, ' + pollenStations.length + ' stations');
+    } else {
+      throw new Error('STAC returned 0 stations');
+    }
   } catch(e) {
-    setPollenUI('pollen_error');
-    console.warn('Pollen meta:', e);
-  } finally { pollenMetaLoading = false; }
+    console.warn('Pollen STAC failed, using fallback:', e.message);
+    loadPollenMetaFallback();
+  } finally {
+    pollenMetaLoading = false;
+  }
+
+  if (!currentPollenStn || !pollenDataUrls[currentPollenStn]) {
+    currentPollenStn = pollenStations[0]?.abbr || 'ZUE';
+    localStorage.setItem('youkidoc_pollen_stn', currentPollenStn);
+  }
+  populatePollenDropdowns();
+  await loadPollenStnData(currentPollenStn);
+  renderStats();
 }
 
 async function loadPollenStnData(stn) {
-  if (!stn || pollenCache[stn] || pollenStnLoading) return;
+  if (!stn || pollenCache[stn] !== undefined || pollenStnLoading) return;
   pollenStnLoading = true;
   setPollenUI('pollen_loading');
+  // Use URL from STAC if available, otherwise fall back to pattern
+  const url = pollenDataUrls[stn]
+    || `https://data.geo.admin.ch/ch.meteoschweiz.ogd-pollen/ogd-pollen_${stn.toLowerCase()}_d_recent.csv`;
   try {
-    const url = `https://data.geo.admin.ch/ch.meteoschweiz.ogd-pollen/ogd-pollen_${stn.toLowerCase()}_d_recent.csv`;
     const r = await fetch(url);
-    if (!r.ok) throw new Error(r.status);
-    pollenCache[stn] = parsePollenData(await r.text());
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const parsed = parsePollenData(await r.text());
+    pollenCache[stn] = Object.keys(parsed).length ? parsed : null;
+    if (!pollenCache[stn]) setPollenUI('pollen_no_data');
   } catch(e) {
-    pollenCache[stn] = null;   // mark as failed so we don't retry
+    pollenCache[stn] = null;
     setPollenUI('pollen_error');
-    console.warn('Pollen data:', e);
+    console.warn('Pollen data:', stn, e.message);
   } finally { pollenStnLoading = false; }
 }
 
 function onPollenStationChange(stn) {
   currentPollenStn = stn;
   localStorage.setItem('youkidoc_pollen_stn', stn);
-  if (!pollenCache[stn]) {
+  if (pollenCache[stn] === undefined) {
     loadPollenStnData(stn).then(() => renderStats());
   } else {
     renderStats();
