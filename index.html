@@ -1610,6 +1610,12 @@ function applyLang(lang) {
   };
   THERAPY_LIST.forEach(th => { if (thMap[th.key]) th.label = t(thMap[th.key]); });
 
+  // Update pollen type dropdown labels
+  const typeSel = document.getElementById('pollen-type-select');
+  if (typeSel && typeSel.options.length === POLLEN_TYPES.length) {
+    POLLEN_TYPES.forEach((p, i) => { typeSel.options[i].textContent = pollenTypeName(p.key); });
+  }
+
   // Re-render dynamic screens
   if (document.getElementById('screen-stats').classList.contains('active')) renderStats();
   if (document.getElementById('screen-cal').classList.contains('active')) renderCalendar();
