@@ -1974,6 +1974,256 @@ const THERAPY_INFO = {
   biologikum: 'Omalizumab\u2122, Dupixent\u2122, Nucala\u2122... <a href="https://compendium.ch/register/atc/R03DX">Komplette Liste</a>.'
 };
 let chartLung = null;
+let chartPollen = null;
+
+// ── MeteoSwiss Pollen ──────────────────────────────────────────────────────
+const POLLEN_TYPES = [
+  { key:'Alnus',    color:'#8B4513', de:'Erle',   en:'Alder',   sq:'Shelgu',  ta:'எர்ல்',   es:'Aliso',     ti:'Alnus',  uk:'Вільха'  },
+  { key:'Betula',   color:'#20B2AA', de:'Birke',  en:'Birch',   sq:'Thupër',  ta:'பர்ச்',   es:'Abedul',    ti:'Betula', uk:'Береза'  },
+  { key:'Corylus',  color:'#DAA520', de:'Hasel',  en:'Hazel',   sq:'Lajthi',  ta:'ஹேசல்',  es:'Avellano',  ti:'ሃዘል',   uk:'Ліщина'  },
+  { key:'Fagus',    color:'#FF8C00', de:'Buche',  en:'Beech',   sq:'Ah',      ta:'பீச்',    es:'Haya',      ti:'ፋጉስ',   uk:'Бук'     },
+  { key:'Fraxinus', color:'#9370DB', de:'Esche',  en:'Ash',     sq:'Frashër', ta:'சாம்பல்', es:'Fresno',    ti:'ፍሬሰን',  uk:'Ясен'    },
+  { key:'Poaceae',  color:'#DC143C', de:'Gräser', en:'Grasses', sq:'Bari',    ta:'புற்கள்', es:'Gramíneas', ti:'ሳር',    uk:'Злаки'   },
+  { key:'Quercus',  color:'#556B2F', de:'Eiche',  en:'Oak',     sq:'Dushk',   ta:'ஓக்',    es:'Roble',     ti:'ኦክ',    uk:'Дуб'     },
+];
+const POLLEN_KEYWORDS = {
+  Alnus:['alnus','erle','alder'], Betula:['betula','birke','birch'],
+  Corylus:['corylus','hasel','hazel'], Fagus:['fagus','buche','beech'],
+  Fraxinus:['fraxinus','esche','ash'], Poaceae:['poaceae','gräser','grasses','graeser','grass'],
+  Quercus:['quercus','eiche','oak']
+};
+
+let pollenStations     = [];
+let pollenCache        = {};   // { STN: { 'YYYY-MM-DD': { Betula:12.4, ... } } }
+let pollenMetaReady    = false;
+let pollenMetaLoading  = false;
+let pollenStnLoading   = false;
+let currentPollenStn   = localStorage.getItem('youkidoc_pollen_stn') || null;
+let currentPollenType  = localStorage.getItem('youkidoc_pollen_type') || 'Betula';
+
+function pollenTypeName(key) {
+  const p = POLLEN_TYPES.find(x => x.key === key);
+  return p ? (p[currentLang] || p.de) : key;
+}
+function pollenTypeColor(key) {
+  const p = POLLEN_TYPES.find(x => x.key === key);
+  return p ? p.color : '#1D9E75';
+}
+
+function setPollenUI(status) {
+  const msg = document.getElementById('pollen-status');
+  const cv  = document.getElementById('pollenChart');
+  if (!msg || !cv) return;
+  if (status === 'chart') {
+    msg.style.display = 'none'; cv.style.display = '';
+  } else {
+    msg.style.display = ''; cv.style.display = 'none';
+    msg.textContent = t(status);
+  }
+}
+
+// Parse station metadata CSV
+function parsePollenMeta(text) {
+  const lines = text.split('\n').filter(l => l.trim() && !l.startsWith('#'));
+  if (lines.length < 2) return [];
+  const sep  = lines[0].includes(';') ? ';' : ',';
+  const hdrs = lines[0].split(sep).map(h => h.trim().replace(/^"|"$/g,'').toLowerCase());
+
+  const fi = (...kw) => hdrs.findIndex(h => kw.some(k => h.includes(k)));
+  const abbrIdx   = fi('abbr','abbreviation','stn','kürzel');
+  const nameIdx   = fi('station name','name','standort');
+  const cantonIdx = fi('canton','kanton');
+
+  return lines.slice(1).map(line => {
+    const c = line.split(sep).map(x => x.trim().replace(/^"|"$/g,''));
+    if (!c[0]) return null;
+    return {
+      abbr:   ((abbrIdx >= 0 ? c[abbrIdx] : c[0]) || '').toUpperCase(),
+      name:    nameIdx >= 0 ? c[nameIdx] : (c[1] || c[0]),
+      canton:  cantonIdx >= 0 ? c[cantonIdx] : (c[2] || '')
+    };
+  }).filter(Boolean).filter(s => s.abbr).sort((a,b) => a.name.localeCompare(b.name));
+}
+
+// Parse station data CSV → { 'YYYY-MM-DD': { Betula:12, ... } }
+function parsePollenData(text) {
+  const out = {};
+  const lines = text.split('\n');
+  let headerIdx = -1, sep = ';', headers = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const l = lines[i].trim();
+    if (!l || l.startsWith('#')) continue;
+    sep = l.includes(';') ? ';' : ',';
+    const cols = l.split(sep).map(c => c.trim().replace(/^"|"$/g,'').toLowerCase());
+    const hasTime = cols.some(c => ['time','date','datum','referenz_dt','zeitpunkt'].includes(c));
+    const hasPollen = cols.some(c => Object.values(POLLEN_KEYWORDS).flat().some(k => c.includes(k)));
+    if (hasTime || hasPollen) { headerIdx = i; headers = cols; break; }
+  }
+  if (headerIdx < 0) return out;
+
+  const timeIdx = headers.findIndex(h => ['time','date','datum','referenz_dt','zeitpunkt'].includes(h));
+  // Map pollen types → column index
+  const colMap = {};
+  headers.forEach((h, idx) => {
+    for (const [key, kws] of Object.entries(POLLEN_KEYWORDS)) {
+      if (kws.some(k => h.includes(k))) { colMap[key] = idx; break; }
+    }
+  });
+
+  for (let i = headerIdx + 1; i < lines.length; i++) {
+    const l = lines[i].trim(); if (!l) continue;
+    const c = l.split(sep).map(x => x.trim().replace(/^"|"$/g,''));
+    if (c.length < 2) continue;
+
+    let ds = timeIdx >= 0 ? c[timeIdx] : c[1];
+    if (!ds) continue;
+    ds = ds.replace(/T.*$/, '');   // strip time component
+    if (/^\d{8}$/.test(ds)) ds = `${ds.slice(0,4)}-${ds.slice(4,6)}-${ds.slice(6,8)}`;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(ds)) continue;
+
+    const day = {};
+    for (const [key, idx] of Object.entries(colMap)) {
+      const v = parseFloat(c[idx]);
+      if (!isNaN(v) && v >= 0) day[key] = v;
+    }
+    if (Object.keys(day).length) out[ds] = day;
+  }
+  return out;
+}
+
+function populatePollenDropdowns() {
+  const stnSel  = document.getElementById('pollen-station-select');
+  const typeSel = document.getElementById('pollen-type-select');
+  if (!stnSel || !typeSel) return;
+
+  stnSel.innerHTML = pollenStations.map(s =>
+    `<option value="${s.abbr}"${s.abbr === currentPollenStn ? ' selected' : ''}>${s.name}${s.canton ? ' ('+s.canton+')' : ''}</option>`
+  ).join('');
+
+  typeSel.innerHTML = POLLEN_TYPES.map(p =>
+    `<option value="${p.key}"${p.key === currentPollenType ? ' selected' : ''}>${pollenTypeName(p.key)}</option>`
+  ).join('');
+}
+
+async function loadPollenMeta() {
+  if (pollenMetaReady || pollenMetaLoading) return;
+  pollenMetaLoading = true;
+  setPollenUI('pollen_loading');
+  try {
+    const r = await fetch('https://data.geo.admin.ch/ch.meteoschweiz.ogd-pollen/ogd-pollen_meta_stations.csv');
+    if (!r.ok) throw new Error(r.status);
+    const text = await r.text();
+    pollenStations = parsePollenMeta(text);
+    pollenMetaReady = true;
+    if (!currentPollenStn && pollenStations.length) {
+      currentPollenStn = pollenStations[0].abbr;
+      localStorage.setItem('youkidoc_pollen_stn', currentPollenStn);
+    }
+    populatePollenDropdowns();
+    await loadPollenStnData(currentPollenStn);
+    renderStats();
+  } catch(e) {
+    setPollenUI('pollen_error');
+    console.warn('Pollen meta:', e);
+  } finally { pollenMetaLoading = false; }
+}
+
+async function loadPollenStnData(stn) {
+  if (!stn || pollenCache[stn] || pollenStnLoading) return;
+  pollenStnLoading = true;
+  setPollenUI('pollen_loading');
+  try {
+    const url = `https://data.geo.admin.ch/ch.meteoschweiz.ogd-pollen/ogd-pollen_${stn.toLowerCase()}_d_recent.csv`;
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(r.status);
+    pollenCache[stn] = parsePollenData(await r.text());
+  } catch(e) {
+    pollenCache[stn] = null;   // mark as failed so we don't retry
+    setPollenUI('pollen_error');
+    console.warn('Pollen data:', e);
+  } finally { pollenStnLoading = false; }
+}
+
+function onPollenStationChange(stn) {
+  currentPollenStn = stn;
+  localStorage.setItem('youkidoc_pollen_stn', stn);
+  if (!pollenCache[stn]) {
+    loadPollenStnData(stn).then(() => renderStats());
+  } else {
+    renderStats();
+  }
+}
+function onPollenTypeChange(type) {
+  currentPollenType = type;
+  localStorage.setItem('youkidoc_pollen_type', type);
+  renderStats();
+}
+
+function renderPollenChart(dates, labels, xHidden, gridColor, tickColor, isDark) {
+  const cv  = document.getElementById('pollenChart');
+  const msg = document.getElementById('pollen-status');
+  if (!cv || !msg) return;
+
+  // Trigger meta load on first view
+  if (!pollenMetaReady && !pollenMetaLoading) { loadPollenMeta(); return; }
+  if (pollenMetaLoading || pollenStnLoading) return;
+
+  const data = currentPollenStn ? pollenCache[currentPollenStn] : null;
+  if (data === null && currentPollenStn) { setPollenUI('pollen_error'); return; }
+  if (!data) return;
+
+  const values = dates.map(d => {
+    const day = data[d];
+    return (day && day[currentPollenType] !== undefined) ? day[currentPollenType] : null;
+  });
+
+  if (!values.some(v => v !== null)) {
+    if (chartPollen) { chartPollen.destroy(); chartPollen = null; }
+    setPollenUI('pollen_no_data'); return;
+  }
+
+  setPollenUI('chart');
+  const color = pollenTypeColor(currentPollenType);
+
+  if (chartPollen) chartPollen.destroy();
+  chartPollen = new Chart(cv, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: pollenTypeName(currentPollenType) + ' (No/m³)',
+        data: values,
+        backgroundColor: color + '99',
+        borderColor: color,
+        borderWidth: 1,
+        borderRadius: 2,
+        barPercentage: 0.85,
+        categoryPercentage: 0.95,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: {
+          title: ctx => labels[ctx[0].dataIndex] || '',
+          label: ctx => ctx.parsed.y !== null
+            ? `${pollenTypeName(currentPollenType)}: ${ctx.parsed.y.toFixed(0)} No/m³` : ''
+        }}
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { font:{size:9}, color: tickColor, maxTicksLimit: 4 },
+          grid: { color: gridColor }
+        },
+        x: xHidden
+      }
+    }
+  });
+}
+
 const THERAPY_GROUP1_ORDER = ['nasenspray','augentropfen','antihistaminikum'];
 const THERAPY_GROUP1 = THERAPY_GROUP1_ORDER.map(k => THERAPY_LIST.find(t => t.key === k));
 const THERAPY_GROUP2_ORDER = ['biologikum','inhalation_kortison','inhalation_notfall'];
