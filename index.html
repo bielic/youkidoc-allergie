@@ -856,23 +856,23 @@
         <div class="chart-vlabel" data-i18n="chart_therapy">Therapie</div>
         <div class="chart-canvas-wrap"><canvas id="therapyChart1"></canvas></div>
       </div>
-      <!-- Pollen (MeteoSwiss) -->
+      <!-- Pollen controls (sits above the chart row) -->
+      <div class="pollen-ctrl-row">
+        <div class="pollen-ctrl-spacer"></div>
+        <select id="pollen-station-select" class="pollen-select" onchange="onPollenStationChange(this.value)">
+          <option>…</option>
+        </select>
+        <select id="pollen-type-select" class="pollen-select" onchange="onPollenTypeChange(this.value)"></select>
+      </div>
+      <!-- Pollen chart row (same structure as other rows) -->
       <div class="chart-row chart-row-pollen">
         <div class="chart-vlabel" data-i18n="chart_pollen">Pollen</div>
-        <div style="flex:1;min-width:0;display:flex;flex-direction:column;">
-          <div class="pollen-ctrl-row">
-            <select id="pollen-station-select" class="pollen-select" onchange="onPollenStationChange(this.value)">
-              <option data-i18n="pollen_loading">Lade…</option>
-            </select>
-            <select id="pollen-type-select" class="pollen-select" onchange="onPollenTypeChange(this.value)"></select>
-          </div>
-          <div class="chart-canvas-wrap" style="position:relative;">
-            <canvas id="pollenChart" style="display:none;"></canvas>
-            <div class="pollen-status-msg" id="pollen-status" data-i18n="pollen_loading">Lade Pollendaten…</div>
-          </div>
-          <div class="pollen-source">© MeteoSwiss</div>
+        <div class="chart-canvas-wrap">
+          <canvas id="pollenChart"></canvas>
+          <div class="pollen-overlay" id="pollen-status">Lade Pollendaten…</div>
         </div>
       </div>
+      <div class="pollen-source">© MeteoSwiss</div>
 
       <!-- 3. Lunge -->
       <div class="chart-row chart-row-lung">
