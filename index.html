@@ -2475,6 +2475,9 @@ function renderStats() {
   // 2) Therapy group 1: AH, A, N
   chartTherapy1 = makeTherapyChart('therapyChart1', THERAPY_GROUP1, chartTherapy1);
 
+  // Pollen chart (MeteoSwiss)
+  renderPollenChart(dates, labels, xHidden, gridColor, tickColor, isDark);
+
   // 3) Lung chart
   if (chartLung) chartLung.destroy();
   chartLung = new Chart(document.getElementById('lungChart'), {
