@@ -1995,11 +1995,15 @@ const POLLEN_TYPES = [
   { key:'Poaceae',  color:'#DC143C', de:'Gräser', en:'Grasses', sq:'Bari',    ta:'புற்கள்', es:'Gramíneas', ti:'ሳር',    uk:'Злаки'   },
   { key:'Quercus',  color:'#556B2F', de:'Eiche',  en:'Oak',     sq:'Dushk',   ta:'ஓக்',    es:'Roble',     ti:'ኦክ',    uk:'Дуб'     },
 ];
+// Keywords match both human-readable names AND MeteoSwiss column codes (kaalnud0 → 'alnu', etc.)
 const POLLEN_KEYWORDS = {
-  Alnus:['alnus','erle','alder'], Betula:['betula','birke','birch'],
-  Corylus:['corylus','hasel','hazel'], Fagus:['fagus','buche','beech'],
-  Fraxinus:['fraxinus','esche','ash'], Poaceae:['poaceae','gräser','grasses','graeser','grass'],
-  Quercus:['quercus','eiche','oak']
+  Alnus:    ['alnus','erle','alder','alnu'],
+  Betula:   ['betula','birke','birch','betu'],
+  Corylus:  ['corylus','hasel','hazel','cory'],
+  Fagus:    ['fagus','buche','beech','fagu'],
+  Fraxinus: ['fraxinus','esche','ash','frax'],
+  Poaceae:  ['poaceae','gräser','grasses','graeser','grass','poac'],
+  Quercus:  ['quercus','eiche','oak','quer']
 };
 
 let pollenStations     = [];
@@ -2033,26 +2037,33 @@ function setPollenUI(status) {
 }
 
 // Parse station data CSV → { 'YYYY-MM-DD': { Betula:12, ... } }
+// Handles MeteoSwiss format: semicolon-delimited, date as "DD.MM.YYYY HH:MM",
+// columns like kaalnud0/kabetud0 (MeteoSwiss codes) or plain species names.
 function parsePollenData(text) {
   const out = {};
   const lines = text.split('\n');
   let headerIdx = -1, sep = ';', headers = [];
+
+  const TIME_COLS = ['time','date','datum','referenz_dt','zeitpunkt','reference_timestamp','timestamp'];
 
   for (let i = 0; i < lines.length; i++) {
     const l = lines[i].trim();
     if (!l || l.startsWith('#')) continue;
     sep = l.includes(';') ? ';' : ',';
     const cols = l.split(sep).map(c => c.trim().replace(/^"|"$/g,'').toLowerCase());
-    const hasTime = cols.some(c => ['time','date','datum','referenz_dt','zeitpunkt'].includes(c));
+    const hasTime   = cols.some(c => TIME_COLS.includes(c));
     const hasPollen = cols.some(c => Object.values(POLLEN_KEYWORDS).flat().some(k => c.includes(k)));
     if (hasTime || hasPollen) { headerIdx = i; headers = cols; break; }
   }
   if (headerIdx < 0) return out;
 
-  const timeIdx = headers.findIndex(h => ['time','date','datum','referenz_dt','zeitpunkt'].includes(h));
+  const timeIdx = headers.findIndex(h => TIME_COLS.includes(h));
+
+  // Map pollen type → first matching column index (use d0 sensor, skip d1 duplicates)
   const colMap = {};
   headers.forEach((h, idx) => {
     for (const [key, kws] of Object.entries(POLLEN_KEYWORDS)) {
+      if (colMap[key] !== undefined) continue;  // already found, keep first (d0)
       if (kws.some(k => h.includes(k))) { colMap[key] = idx; break; }
     }
   });
@@ -2064,7 +2075,13 @@ function parsePollenData(text) {
 
     let ds = timeIdx >= 0 ? c[timeIdx] : c[1];
     if (!ds) continue;
-    ds = ds.replace(/T.*$/, '');
+
+    // Strip time portion: "01.01.2026 00:00" → "01.01.2026"
+    ds = ds.replace(/\s.*$/, '').replace(/T.*$/, '');
+    // DD.MM.YYYY → YYYY-MM-DD
+    const dmY = ds.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+    if (dmY) ds = `${dmY[3]}-${dmY[2]}-${dmY[1]}`;
+    // YYYYMMDD → YYYY-MM-DD
     if (/^\d{8}$/.test(ds)) ds = `${ds.slice(0,4)}-${ds.slice(4,6)}-${ds.slice(6,8)}`;
     if (!/^\d{4}-\d{2}-\d{2}$/.test(ds)) continue;
 
